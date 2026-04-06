@@ -1,0 +1,23 @@
+Package: rENM.model
+Type: Package
+Title: Modeling tools for the rENM framework
+Version: 0.1.0.9000
+Author: John L. Schnase
+Maintainer: John L. Schnase <jschnase@mac.com>
+ORCID: 0000-0001-7473-3977
+Description: Resources to create rENM time series models.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.3
+URL: https://github.com/jschnase/rENM.model
+BugReports: https://github.com/jschnase/rENM.model/issues
+Imports:
+    rENM.core,
+    ggplot2,
+    raster,
+    scales,
+    sdm,
+    sf,
+    sp,
+    terra,
+    usdm
