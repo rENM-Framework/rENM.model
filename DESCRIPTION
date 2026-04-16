@@ -3,7 +3,7 @@ Type: Package
 Title: Modeling tools for the rENM framework
 Version: 0.1.0.9000
 Author: John L. Schnase
-Maintainer: John L. Schnase <jschnase@mac.com>
+Maintainer: John L. Schnase <rENM.Framework@gmail.com>
 ORCID: 0000-0001-7473-3977
 Description: The rENM framework is a modular sysem for 
     reconstucting and analyzing long-term ecological niche 
@@ -14,8 +14,8 @@ Description: The rENM framework is a modular sysem for
 License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
-URL: https://github.com/jschnase/rENM.model
-BugReports: https://github.com/jschnase/rENM.model/issues
+URL: https://github.com/rENM-Framework/rENM.model
+BugReports: https://github.com/rENM-Framework/rENM.model/issues
 Imports:
     rENM.core,
     dismo,
