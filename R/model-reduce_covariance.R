@@ -1,83 +1,49 @@
-#' Reduce variable covariance
+#' Reduce variable covariance via adaptive VIF screening
 #'
-#' Detects multicollinearity in the stagged predictor rasters through an
-#' adaptive Variable Inflation Factor (VIF) routine, records results, and
-#' retains only non-correlated variables for further processing.
+#' Detects multicollinearity in staged predictor rasters through an adaptive
+#' VIF routine, moves correlated predictors to a sub-directory, and writes a
+#' results CSV. Processes one or more 5-year time bins.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
+#' Input rasters are read from
+#' \code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/}.
+#' The function samples \code{sample_schedule} sizes in order, running
+#' \code{usdm::vifstep()} at each size until the retained set is stable for
+#' \code{stability_patience} consecutive iterations.
 #'
-#' \strong{Pipeline context}
-#' \itemize{
-#'   \item Input rasters: \code{<project_dir>/runs/<alpha_code>/TimeSeries/
-#'         <year>/vars}
-#'   \item Log file: \code{<project_dir>/runs/<alpha_code>/_log.txt}
-#' }
-#'
-#' \strong{Inputs}
-#' \itemize{
-#'   \item Predictor rasters matching \code{file_patterns}
-#'   \item Optional exclusions via \code{exclude_vars}
-#' }
-#'
-#' \strong{Outputs}
+#' Outputs per year:
 #' \itemize{
 #'   \item Results CSV: \code{_<alpha_code>-<year>-Correlation-Results.csv}
-#'   \item Directory of moved rasters (only if variables are dropped):
-#'         \code{_<alpha_code>-<year>-Correlated-Variables}
+#'   \item Moved rasters (only when variables are dropped):
+#'         \code{_<alpha_code>-<year>-Correlated-Variables/}
 #'   \item Log entry appended to \code{_log.txt}
 #' }
 #'
-#' \strong{Methods}
-#' \itemize{
-#'   \item Adaptive sampling over \code{sample_schedule} sizes until the kept
-#'         set is stable for \code{stability_patience} iterations
-#'   \item Multicollinearity screening with \code{usdm::vifstep()}
-#'         at threshold \code{vif_threshold}
-#'   \item Reporting of high-correlation pairs where
-#'         \eqn{|r| \ge corr_threshold}
-#' }
-#'
-#' \strong{Data requirements}
-#' \itemize{
-#'   \item Raster layers must share identical geometry
-#'   \item Layer names must correspond to predictor identifiers
-#' }
-#'
-#' @param alpha_code Character. Species alpha code (for example, \code{"CASP"}).
-#' @param year Integer vector, or \code{NULL}. Years to process; if
-#'   \code{NULL} (default) the sequence 1980, 1985, ..., 2020 is used.
-#' @param vif_threshold Numeric. VIF threshold passed to
-#'   \code{usdm::vifstep()} (default 10).
-#' @param sample_schedule Integer vector. Adaptive sample sizes tried in
-#'   order; the routine stops early once the kept set stabilizes. Default
+#' @param alpha_code Character. Species alpha code (e.g., \code{"CASP"}).
+#' @param year Integer vector or NULL. Years to process; NULL uses
+#'   \code{seq(1980, 2020, by = 5)}.
+#' @param vif_threshold Numeric. VIF threshold for \code{usdm::vifstep()};
+#'   default 10.
+#' @param sample_schedule Integer vector. Adaptive sample sizes tried in order;
+#'   stops early once the retained set stabilizes. Default
 #'   \code{c(10000, 20000, 50000)}.
-#' @param stability_patience Integer. Consecutive identical kept sets needed
-#'   for convergence (default 1).
-#' @param corr_threshold Numeric. Absolute Pearson correlation threshold used
-#'   when listing high-correlation pairs (default 0.95).
-#' @param exclude_vars Character vector. Predictor names that must always be
-#'   retained. Case-sensitive match against sampled column names (default
-#'   \code{character(0)}).
-#' @param file_patterns Character vector. Regular expressions selecting raster
-#'   filenames to include. Matching stems trigger companion \code{.asc} moves.
-#'   Default \code{c("\\\\.tif$", "\\\\.grd$", "\\\\.img$", "\\\\.bil$")}.
-#' @param overwrite_results Logical. Overwrite an existing results CSV
-#'   (default \code{TRUE}).
+#' @param stability_patience Integer. Consecutive identical retained sets
+#'   required for convergence; default 1.
+#' @param corr_threshold Numeric. Absolute Pearson correlation threshold for
+#'   reporting high-correlation pairs; default 0.95.
+#' @param exclude_vars Character vector. Predictor names always retained
+#'   regardless of VIF result; default \code{character(0)}.
+#' @param file_patterns Character vector. Regex patterns selecting raster
+#'   filenames to include. Default
+#'   \code{c("\\.tif$", "\\.grd$", "\\.img$", "\\.bil$")}.
+#' @param overwrite_results Logical. Overwrite an existing results CSV;
+#'   default TRUE.
 #'
-#' @return Invisible list keyed by year containing:
-#' \itemize{
-#'   \item \code{kept} – character vector of retained predictors
-#'   \item \code{dropped} – character vector of removed predictors
-#'   \item \code{vif_table} – data frame of VIF results for all variables
-#'   \item \code{cor_pairs} – data frame of high-correlation pairs
-#'   \item \code{results_csv} – file path to the written CSV
-#'   \item \code{moved_to} – directory path for relocated rasters or
-#'         \code{NA} when none were moved
-#' }
+#' @return Invisible named list keyed by year. Each element contains:
+#'   \code{kept}, \code{dropped}, \code{vif_table}, \code{cor_pairs},
+#'   \code{results_csv}, \code{moved_to} (directory path or NA).
 #'
+#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_screened_variables}}
 #' @importFrom raster stack nlayers sampleRandom
 #' @importFrom stats complete.cases na.omit cor
 #' @importFrom tools file_path_sans_ext
@@ -87,10 +53,7 @@
 #' @examples
 #' \dontrun{
 #'   reduce_covariance("CASP")
-#'   reduce_covariance("CASP", year = 2005,
-#'                     exclude_vars = c("bio1", "bio12"))
-#'   reduce_covariance("CASP", year = 2000,
-#'                     sample_schedule = c(8000, 16000, 32000, 64000))
+#'   reduce_covariance("CASP", year = 2005, exclude_vars = c("bio1", "bio12"))
 #' }
 #'
 #' @export
@@ -115,15 +78,11 @@ reduce_covariance <- function(alpha_code,
   years <- if (is.null(year)) seq(1980, 2020, by = 5) else as.integer(year)
   stopifnot(all(is.numeric(years)))
 
-  # Required packages
   pkgs <- c("raster", "usdm", "tools")
-  missing <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
-  if (length(missing))
-    stop(sprintf("Missing required package(s): %s", paste(missing, collapse = ", ")))
+  missing_pkgs <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
+  if (length(missing_pkgs))
+    stop(sprintf("Missing required package(s): %s", paste(missing_pkgs, collapse = ", ")))
 
-  # ---------------------------------------------------------------------------
-  # Use package helper to locate the project root
-  # ---------------------------------------------------------------------------
   project_dir <- rENM_project_dir()
 
   # ------------------------------- Helpers ------------------------------------
@@ -218,7 +177,6 @@ reduce_covariance <- function(alpha_code,
     }
     cat(sprintf("[reduce_covariance] Found %d file(s)\n", length(var_files)))
 
-    # Load and prep stack
     rs <- raster::stack(var_files)
     if (any(duplicated(names(rs)))) names(rs) <- make.unique(names(rs))
     cat(sprintf("[reduce_covariance] Stack has %d layer(s)\n", raster::nlayers(rs)))
@@ -249,7 +207,6 @@ reduce_covariance <- function(alpha_code,
       last_valid_n   <- valid_n
       all_vars       <- colnames(samp)
 
-      # Correlation (reporting only)
       cor_mat        <- tryCatch(stats::cor(samp, use = "pairwise.complete.obs"),
                                  error = function(e) NULL)
       cor_pairs      <- high_corr_pairs(cor_mat, thr = corr_threshold)
@@ -261,7 +218,6 @@ reduce_covariance <- function(alpha_code,
                     corr_threshold))
       }
 
-      # VIF selection
       cat(sprintf("[reduce_covariance] usdm::vifstep(th = %.2f)\n", vif_threshold))
       vif_obj <- tryCatch(
         suppressMessages(usdm::vifstep(samp, th = vif_threshold, trace = FALSE)),
@@ -288,7 +244,6 @@ reduce_covariance <- function(alpha_code,
 
       kept_now <- unique(as.character(vif_tbl$Variables))
 
-      # Enforce exclusion list
       if (length(exclude_vars)) {
         present_exclusions <- intersect(exclude_vars, all_vars)
         missing_exclusions <- setdiff(exclude_vars, all_vars)
@@ -299,7 +254,6 @@ reduce_covariance <- function(alpha_code,
         kept_now <- union(kept_now, present_exclusions)
       }
 
-      # Stability check
       if (!is.null(prev_kept) && setequal(prev_kept, kept_now)) {
         stable_hits <- stable_hits + 1
         cat(sprintf("[reduce_covariance] Kept set stable (%d/%d)\n",
@@ -348,7 +302,6 @@ reduce_covariance <- function(alpha_code,
       }
       utils::write.csv(all_tbl, tmpfile, row.names = FALSE)
 
-      # Second list
       cat("\nHighCorrelationPairs\n", file = tmpfile, append = TRUE)
       cat("var1,var2,r\n",           file = tmpfile, append = TRUE)
       if (nrow(cor_pairs_final)) {
@@ -417,7 +370,6 @@ reduce_covariance <- function(alpha_code,
                elapsed       = elapsed,
                output_file   = out_csv_path)
 
-    # ------------------------------ Collect out -------------------------------
     results[[as.character(yr)]] <- list(
       kept        = kept_final,
       dropped     = dropped_final,

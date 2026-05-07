@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-stage_screened_variables.R
 \name{stage_screened_variables}
 \alias{stage_screened_variables}
-\title{Stage screened environmental variables into the time series}
+\title{Stage screened environmental variables into TimeSeries bins}
 \usage{
 stage_screened_variables(
   alpha_code,
@@ -12,81 +12,60 @@ stage_screened_variables(
 )
 }
 \arguments{
-\item{alpha_code}{Character. Species alpha code (e.g., "CASP"). Used to
-resolve paths under the project \code{runs} directory.}
+\item{alpha_code}{Character. Species alpha code (e.g., \code{"CASP"}).}
 
-\item{year}{Integer. Vector of years or single year. Defaults to
-\code{seq(1980, 2020, 5)}. Each value must be a 5-year step within
-1980-2020.}
+\item{year}{Integer. Vector of 5-year bins in \{1980, 1985, ..., 2020\}.
+Default: \code{seq(1980, 2020, 5)}.}
 
 \item{top_n}{Integer or NULL. Number of top-ranked variables to stage per
-year. Default = 10; use \code{NULL} to copy all variables.}
+year; NULL copies all variables. Default 10.}
 
-\item{rank_method}{Character. One of "ranksum","medianPI","ratio","wz".
-Selects the ranking column used to order variables. Default = "ratio".}
+\item{rank_method}{Character. Ranking metric; one of \code{"ranksum"},
+\code{"medianPI"}, \code{"ratio"}, \code{"wz"}. Default \code{"ratio"}.}
 }
 \value{
-Invisible named list with:
-\itemize{
-  \item \code{alpha_code} Character
-  \item \code{years} Integer vector
-  \item \code{rank_method} Character
-  \item \code{top_n} Integer or NULL
-  \item \code{copied_paths} Character vector
-  \item \code{counts} List: \code{total_years}, \code{attempted_files},
-    \code{copied_files}, \code{missing_files},
-    \code{years_missing_ranking}
-  \item \code{elapsed_seconds} Numeric
-  \item \code{log_file} Character
-}
+Invisible named list with elements:
+  \code{alpha_code}, \code{years}, \code{rank_method}, \code{top_n},
+  \code{copied_paths},
+  \code{counts} (list: \code{total_years}, \code{attempted_files},
+  \code{copied_files}, \code{missing_files},
+  \code{years_missing_ranking}),
+  \code{elapsed_seconds}, \code{log_file}.
+  Primary side effects are file copies, directory creation, and a log
+  entry appended to \code{_log.txt}.
 }
 \description{
-Stage (copy) ranked raster predictor layers into per-year TimeSeries
-directories based on a master variable-ranking table. Supports several
-ranking metrics and an optional top-N filter.
+Copies ranked raster predictor layers into per-year
+\code{TimeSeries/<year>/vars/} directories based on a variable-ranking
+CSV produced by \code{\link{screen_by_convergence1}} or
+\code{\link{screen_by_convergence2}}. Supports several ranking metrics
+and an optional top-N filter.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+Source rasters are read from
+\code{<project_dir>/runs/<alpha_code>/_vars/<year>/}.
+Rankings are read from
+\code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/}
+\code{_<alpha_code>-<year>-Variable-Ranking.csv}.
+A processing summary is appended to the run log.
 
-\strong{Inputs}
+Supported \code{rank_method} values and the corresponding ranking column:
 \itemize{
-  \item Master ranking CSV, one per year:
-    \code{<proj_root>/runs/<alpha_code>/TimeSeries/<year>/vars/}
-    \code{_<alpha_code>-<year>-Variable-Ranking.csv}
-  \item Source rasters:
-    \code{<proj_root>/runs/<alpha_code>/_vars/<year>/}
-}
-
-\strong{Outputs}
-\itemize{
-  \item Ranked rasters copied to:
-    \code{<proj_root>/runs/<alpha_code>/TimeSeries/<year>/vars/}
-  \item Per-year status line and a 72-dash summary appended to:
-    \code{<proj_root>/runs/<alpha_code>/_log.txt}
-}
-
-\strong{Methods}
-\itemize{
-  \item Ranking columns:
-    \code{rank_ranksum}, \code{rank_medianPI},
-    \code{rank_ratio}, \code{rank_wz}
-  \item Tie-breakers use the associated score column
-    (higher or lower depending on metric).
-}
-
-\strong{Data requirements}
-\itemize{
-  \item Years must be multiples of five in the range
-    \code{\{1980, 1985, ..., 2020\}}.
-  \item Raster filenames must match the \code{var} column
-    in the ranking CSV.
+  \item \code{"ratio"} -- \code{rank_ratio} (default)
+  \item \code{"ranksum"} -- \code{rank_ranksum}
+  \item \code{"medianPI"} -- \code{rank_medianPI}
+  \item \code{"wz"} -- \code{rank_wz}
 }
 }
 \examples{
 \dontrun{
-stage_screened_variables("CASP", top_n = 5, rank_method = "medianPI")
+  stage_screened_variables("CASP")
+  stage_screened_variables("CASP", top_n = 5, rank_method = "medianPI")
 }
 
+}
+\seealso{
+\code{\link{screen_by_convergence1}},
+  \code{\link{screen_by_convergence2}},
+  \code{\link{rENM_project_dir}}
 }

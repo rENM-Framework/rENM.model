@@ -2,14 +2,13 @@
 % Please edit documentation in R/model-create_range_map.R
 \name{create_range_map}
 \alias{create_range_map}
-\title{Create and save a binary presence-absence range map for a species}
+\title{Create and save a binary presence-absence range map}
 \usage{
 create_range_map(
   pa,
   alpha_code,
   year,
-  state_shp = file.path(rENM_project_dir(),
-    "data/shapefiles/tl_2012_us_state/tl_2012_us_state.shp"),
+  state_shp = NULL,
   title = "Range Map",
   layer = 1L,
   minor_div = 2L,
@@ -26,107 +25,61 @@ create_range_map(
 \arguments{
 \item{pa}{SpatRaster, Character, or Raster. A presence-absence raster.}
 
-\item{alpha_code}{Character. Code used to construct output paths and to look
-up GAP.RANGE via get_species_info(alpha_code) for locating the species
-range shapefile at:
-\code{<rENM_project_dir()>/data/shapefiles/<gap_range>/}
-\code{<gap_range>.shp}. Must be a non-empty string (e.g., "casp").}
+\item{alpha_code}{Character. Species code (e.g., \code{"CASP"}), used to
+resolve output paths and to look up \code{GAP.RANGE} via
+\code{get_species_info()}.}
 
-\item{year}{Integer, Character. Year inserted into the output path and name.}
+\item{year}{Integer or Character. Year inserted into the output path and name.}
 
-\item{state_shp}{File path. Path to a states or administrative boundaries
-shapefile. Defaults to:
-\code{<rENM_project_dir()>/data/shapefiles/tl_2012_us_state/}
-\code{tl_2012_us_state.shp}.}
+\item{state_shp}{Character. Path to a states/administrative-boundaries
+shapefile. Default resolves to
+\code{<project_dir>/data/shapefiles/tl_2012_us_state/tl_2012_us_state.shp}.}
 
-\item{title}{Character. Plot title. Default "Range Map".}
+\item{title}{Character. Plot title. Default \code{"Range Map"}.}
 
-\item{layer}{Integer. Layer index to use when pa has multiple layers.
+\item{layer}{Integer. Layer index when \code{pa} has multiple layers.
 Default 1L.}
 
-\item{minor_div}{Integer. Number of minor grid divisions between major axis
-breaks. For example, 2L places two minor ticks between majors. Default 2L.}
+\item{minor_div}{Integer. Minor grid divisions between major axis breaks.
+Default 2L.}
 
-\item{width_px, height_px}{Numeric. Output PNG dimensions in pixels.
-Defaults 1000 and 750.}
+\item{width_px, height_px}{Numeric. PNG dimensions in pixels. Defaults
+1000 and 750.}
 
-\item{dpi}{Numeric. Plot DPI used to convert pixels to inches for ggsave().
-Default 72.}
+\item{dpi}{Numeric. Plot DPI for \code{ggsave()}. Default 72.}
 
 \item{title_size, legend_size, legend_title_size, axis_title_size, axis_text_size}{Numeric. Font sizes for plot elements.}
 }
 \value{
-Invisibly returns a List with:
-\itemize{
-  \item plot: ggplot2 object representing the rendered map
-  \item img_path: Character path to the saved .png file
-  \item asc_path: Character path to the saved .asc file
-  \item tif_path: Character path to the saved .tif file
-}
-Side effects include writing raster and image files to disk and removing
-associated sidecar files when present.
+Invisible list with \code{plot} (ggplot2 object), \code{img_path},
+  \code{asc_path}, \code{tif_path}. Side effects are raster and image files
+  written to disk and sidecar files removed.
 }
 \description{
-Build a ggplot2 map for a binary (0/1) presence-absence raster and save
-the plot image and raster outputs in multiple formats. Supports multiple
-raster input types and integrates species range overlays.
+Build a ggplot2 map for a binary (0/1) presence-absence raster, overlaid
+with state boundaries and the species GAP range polygon. Writes PNG, ASC,
+and GeoTIFF outputs to the per-year model directory.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+Output files are written to:
+\code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/model/}
 
-\strong{Pipeline context}
-Constructs a presence-absence map and raster exports within the run-specific
-directory:
-\code{<rENM_project_dir()>/runs/<alpha_code>/TimeSeries/<year>/model/}
-
-\strong{Inputs}
-Presence (1) is rendered in orange; Absence (0) in light gray. NA cells are
-dropped from the plot. If pa has multiple layers, layer selects which to use.
-
-\strong{Species range source (package helper)}
-This function does not search for range shapefiles dynamically. It calls the
-internal helper \code{get_species_info(alpha_code)}, looks up GAP.RANGE in
-\code{<rENM_project_dir()>/data/_species.csv}, and loads the shapefile at:
-\code{<rENM_project_dir()>/data/shapefiles/<gap_range>/}
-\code{<gap_range>.shp}
-
-\strong{Methods}
-Values in the raster are coerced to binary by rounding (round()) and then
-mapped to the factor levels "Presence" (1) and "Absence" (0) for plotting.
-The vector layers (states and species range) are reprojected to the raster
-CRS if necessary. Axis breaks are computed with pretty() plus configurable
-minor divisions.
-
-\strong{Outputs}
-The following files are written:
-\itemize{
-  \item Plot image: <fn>.png
-  \item Raster (AAIGrid): <fn>.asc
-  \item Raster (GeoTIFF): <fn>.tif
-}
-
-After writing .asc and .tif, common sidecar files (.prj, .aux.xml) are
-removed if present to keep the directory clean.
+The species range shapefile is resolved via \code{get_species_info(alpha_code)},
+which looks up \code{GAP.RANGE} in the species table and reads the shapefile
+from \code{<project_dir>/data/shapefiles/<gap_range>/<gap_range>.shp}.
+State and range vectors are reprojected to the raster CRS if necessary.
+Values in the raster are coerced to binary by \code{round()}.
+Sidecar files (\code{.prj}, \code{.aux.xml}) are removed after writing.
 }
 \examples{
 \dontrun{
-  # Using a file path:
-  create_range_map(
-    pa         = "rasters/casp_1980_pa.tif",
-    alpha_code = "casp",
-    year       = 1980
-  )
+  create_range_map("rasters/casp_1980_pa.tif", "casp", 1980)
 
-  # Using a SpatRaster and a specific layer:
   r <- terra::rast("rasters/casp_stack.tif")
-  create_range_map(r, "casp", 1990, layer = 2L,
-                   title = "CASP 1990 Range")
+  create_range_map(r, "casp", 1990, layer = 2L, title = "CASP 1990 Range")
 }
 
 }
 \seealso{
-[terra::rast()], [terra::writeRaster()], [sf::st_as_sf()],
-  [ggplot2::ggplot()]
+\code{\link{plot_suitability}}, \code{\link{rENM_project_dir}}
 }

@@ -1,82 +1,43 @@
-## Global vars for dplyr / NSE columns in this file
-if (getRversion() >= "2.15.1") {
-  utils::globalVariables(c(
-    "var", "perm_imp", "n_pairs", "sd_PI", "median_PI", "IQR_PI",
-    "rank_medianPI", "rank_stability", "z_PI", "z_IQR",
-    "ranksum_score", "wz_score", "ratio_score",
-    "mean_PI", "se_mean_PI", "se_median_PI",
-    "rank_ranksum", "rank_wz", "rank_ratio"
-  ))
-}
-
-#' Iterative bivariate ENM screening with adaptive, stability-aware convergence
+#' Iterative bivariate ENM screening via native maxnet (convergence 2)
 #'
-#' Repeatedly fits bivariate \code{maxnet} ecological niche models, aggregates
-#' permutation importance (PI) scores, and stops when both the mean PI and
-#' membership of the adaptive top-k variable set stabilize. Designed for rapid,
-#' reproducible predictor down-selection across 5-year intervals without the
-#' Java dependency required by \code{dismo::maxent()}.
+#' Repeatedly fits bivariate \code{maxnet} models, aggregates permutation
+#' importance (PI) scores, and stops when both the mean PI and membership of
+#' the adaptive top-k variable set stabilize. Identical convergence logic to
+#' \code{\link{screen_by_convergence1}} but uses \pkg{maxnet} instead of
+#' Java-based \pkg{dismo} MaxEnt, eliminating the Java dependency.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' \code{rENM_project_dir()}.
+#' Reads occurrences from \code{runs/<alpha_code>/_occs/of-<year>.csv} and
+#' raster predictors from \code{runs/<alpha_code>/_vars/<year>/}.
+#' Writes a variable-ranking CSV and a convergence-trace CSV to
+#' \code{runs/<alpha_code>/TimeSeries/<year>/vars/}.
 #'
-#' \strong{Pipeline context}
+#' Background points are drawn directly from non-NA raster cells using
+#' \code{raster::sampleRandom(xy = TRUE, na.rm = TRUE)}.
+#' Permutation importance is computed as a MaxEnt-like AUC-drop metric:
+#' each predictor is permuted in turn, the drop in training AUC is measured
+#' without refitting, and drops are normalized to percentages summing to 100
+#' within each bivariate model.
+#'
+#' \strong{Convergence criteria} (both must pass):
 #' \itemize{
-#'   \item Reads occurrences from \code{runs/<alpha_code>/_occs/of-<year>.csv}
-#'   \item Reads raster predictors from \code{runs/<alpha_code>/_vars/<year>/}
-#'   \item Writes outputs to
-#'         \code{runs/<alpha_code>/TimeSeries/<year>/vars/}
-#' }
-#'
-#' \strong{Inputs}
-#' \itemize{
-#'   \item Occurrence table with \code{longitude}, \code{latitude}
-#'   \item At least two GeoTIFF predictor layers
-#' }
-#'
-#' \strong{Methods}
-#' The function repeatedly samples bivariate predictor pairs and fits
-#' \code{maxnet} models using occurrence and background environmental values
-#' extracted from the selected raster layers. Background points are drawn
-#' directly from non-\code{NA} raster cells using
-#' \code{raster::sampleRandom(xy = TRUE, na.rm = TRUE)}, eliminating the need
-#' for \code{dismo::randomPoints()}.
-#'
-#' For each fitted pair, permutation importance is computed manually in a
-#' MaxEnt-like way: each predictor is permuted in turn on the model evaluation
-#' table, predictions are recomputed without refitting, the drop in training AUC
-#' is measured, and the resulting drops are normalized to percentages summing to
-#' 100 across the two predictors in that bivariate model. This produces a
-#' permutation-based importance metric analogous in spirit to Java MaxEnt's
-#' permutation importance, while remaining fully native to R.
-#'
-#' Convergence requires both tests to pass:
-#' \itemize{
-#'   \item \emph{Mean stability} - relative change in top-k mean PI below an
-#'         adaptive threshold (\code{10\%} if \eqn{p \le 20},
-#'         \code{7.5\%} if \eqn{21 \le p \le 40}, else \code{5\%}).
-#'   \item \emph{Membership stability} - Jaccard overlap of consecutive
+#'   \item \emph{Mean stability} -- relative change in top-k mean PI below an
+#'         adaptive threshold (10\% if \eqn{p \le 20},
+#'         7.5\% if \eqn{21 \le p \le 40}, else 5\%).
+#'   \item \emph{Membership stability} -- Jaccard overlap of consecutive
 #'         top-k sets above \code{set_threshold}.
 #' }
-#' Adaptive top-k: \eqn{k=\min(12,\max(5,\mathrm{round}(\sqrt{p})))}. Batch
-#' sampling defaults to \code{max(1, floor(1.5 * sqrt(p)))} appearances per
-#' variable and is halved in \code{fast} mode. Parallel execution uses
-#' deterministic RNG streams.
+#' Adaptive top-k: \eqn{k = \min(12, \max(5, \mathrm{round}(\sqrt{p})))}.
+#' Batch sampling defaults to \code{max(1, floor(1.5 * sqrt(p)))} appearances
+#' per variable (halved in \code{fast} mode). Parallel execution uses
+#' deterministic per-worker RNG streams. Balanced pairing prevents self-pairs.
 #'
-#' \strong{Outputs}
-#' \itemize{
-#'   \item Variable ranking CSV
-#'   \item Convergence trace CSV
-#'   \item Log entry appended to \code{_log.txt}
-#' }
+#' If \code{year = NULL}, all 5-year intervals 1980--2020 are processed in
+#' sequence.
 #'
-#' If \code{year = NULL}, all 5-year intervals 1980-2020 are processed.
-#'
-#' @param alpha_code Character. Species or run code (e.g., "CASP").
+#' @param alpha_code Character. Species or run code (e.g., \code{"CASP"}).
 #' @param year Integer, Character, or NULL. Year to process; NULL runs all
-#'   5-year intervals 1980-2020.
+#'   5-year intervals 1980--2020.
 #' @param max_iter Integer. Maximum iterations safeguard; default 50.
 #' @param batch_samples Integer or NULL. Target appearances per variable per
 #'   iteration; NULL triggers an adaptive fallback.
@@ -84,25 +45,35 @@ if (getRversion() >= "2.15.1") {
 #'   default 0.5.
 #' @param background_n Integer. Background points per model; default 2500.
 #' @param seed Integer or NULL. RNG seed; NULL draws a random seed that is
-#'   returned.
+#'   returned in the result.
 #' @param ncores Integer. CPU cores for parallel fits; default
 #'   \code{max(1, parallel::detectCores() - 1)}.
 #' @param fast Logical. Enable fast triage mode; default FALSE.
 #' @param set_threshold Numeric. Jaccard threshold for membership stability;
-#'   default 0.90. Must lie in \code{(0, 1)}.
+#'   default 0.90.
 #' @param passes_required Integer or NULL. Consecutive passes needed for
 #'   convergence; NULL defaults to 1 in fast mode, else 2.
 #'
-#' @return A list (invisible) with:
+#' @return Invisible list with elements:
 #' \describe{
 #'   \item{\code{importance_summary}}{Data frame of variable-wise PI statistics
 #'         and rank diagnostics.}
 #'   \item{\code{convergence_trace}}{Data frame with per-iteration diagnostics.}
-#'   \item{\code{output_files}}{Named vector with paths to the two CSV files.}
-#'   \item{\code{seed_used}}{Integer seed actually used in this run.}
+#'   \item{\code{output_files}}{Named list with paths to the ranking and
+#'         convergence-trace CSV files.}
+#'   \item{\code{seed_used}}{Integer seed used in this run.}
 #' }
-#' Side effects: two CSV files and a log block are written to disk inside the
-#' project directory.
+#' Side effects: two CSV files and a log block are written to disk.
+#'
+#' @seealso \code{\link{screen_by_convergence1}}, \code{\link{rENM_project_dir}}
+#' @examples
+#' \dontrun{
+#' ## Quick triage across all years
+#' res <- screen_by_convergence2("CASP", fast = TRUE)
+#'
+#' ## Standard fidelity for a single year
+#' res <- screen_by_convergence2("CASP", 1990, seed = 42)
+#' }
 #'
 #' @importFrom maxnet maxnet maxnet.formula
 #' @importFrom raster stack subset extract nlayers extent sampleRandom
@@ -113,19 +84,6 @@ if (getRversion() >= "2.15.1") {
 #' @importFrom stats median IQR sd quantile predict
 #' @importFrom utils read.csv write.csv flush.console
 #' @importFrom tools file_path_sans_ext
-#'
-#' @examples
-#' \dontrun{
-#' ## Quick triage across all years
-#' res <- screen_by_convergence2("CASP", fast = TRUE)
-#'
-#' ## Standard fidelity for a single year
-#' res <- screen_by_convergence2("CASP", 1990, seed = 42)
-#' }
-#'
-#' @seealso
-#' \code{\link[maxnet]{maxnet}},
-#' \code{\link[raster]{stack}}
 #'
 #' @export
 screen_by_convergence2 <- function(alpha_code,
@@ -173,9 +131,9 @@ screen_by_convergence2 <- function(alpha_code,
 
   ## --- require packages (no library calls) ---------------------------------
   req_pkgs <- c("maxnet", "raster", "doParallel", "foreach", "dplyr")
-  missing <- req_pkgs[!vapply(req_pkgs, requireNamespace, logical(1), quietly = TRUE)]
-  if (length(missing)) {
-    stop("Missing required packages: ", paste(missing, collapse = ", "),
+  missing_pkgs <- req_pkgs[!vapply(req_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_pkgs)) {
+    stop("Missing required packages: ", paste(missing_pkgs, collapse = ", "),
          ". Please install them before running.")
   }
 
@@ -430,7 +388,7 @@ screen_by_convergence2 <- function(alpha_code,
       )
   }
 
-  # Mean of top-k median_PI values in a summary table ordered by rank_medianPI
+  # Mean of top-k median_PI values ordered by rank_medianPI
   topk_mean <- function(summary_df, k = 5L) {
     if (!nrow(summary_df)) return(NA_real_)
     kk <- min(k, nrow(summary_df))
@@ -442,8 +400,7 @@ screen_by_convergence2 <- function(alpha_code,
     abs(curr - prev) / abs(prev)
   }
 
-  # Balanced pairing sampler: each var appears ~appearances times with diverse
-  # partners and self-pairs are not allowed
+  # Balanced pairing sampler: each var appears ~appearances times; no self-pairs
   balanced_pairs <- function(vars, appearances) {
     appearances <- max(1L, as.integer(appearances))
     vars <- as.character(vars)
@@ -498,7 +455,7 @@ screen_by_convergence2 <- function(alpha_code,
       pairings <- replicate(replicates, sample(vars, 2), simplify = FALSE)
     }
 
-    # --- fit & extract permutation importance -------------------------------
+    # fit & extract permutation importance
     batch_res <- foreach(
       p = pairings,
       .combine = rbind,
@@ -514,11 +471,9 @@ screen_by_convergence2 <- function(alpha_code,
       )
     }
 
-    # accumulate
     results_all <- if (is.null(results_all)) batch_res else rbind(results_all, batch_res)
     cumulative_pairs <- cumulative_pairs + replicates
 
-    # summarize cumulatively and check convergence
     summary_now <- summarize_importance(results_all, w_stability = w_stability)
 
     ord <- order(summary_now$rank_medianPI)
@@ -526,7 +481,6 @@ screen_by_convergence2 <- function(alpha_code,
     curr_topk_mean <- topk_mean(ordered_summary, k = k_top)
     top_vars <- ordered_summary$var[seq_len(min(k_top, nrow(ordered_summary)))]
 
-    # mean-stability pass
     change <- pct_change(prev_topk_mean, curr_topk_mean)
     if (iter >= 2 && is.finite(change) && change < conv_threshold) {
       passes_mean <- passes_mean + 1L
@@ -534,7 +488,6 @@ screen_by_convergence2 <- function(alpha_code,
       passes_mean <- 0L
     }
 
-    # membership-stability pass (Jaccard of consecutive top-k sets)
     jaccard <- if (length(prev_topk_set) && length(top_vars)) {
       inter <- length(intersect(top_vars, prev_topk_set))
       union <- length(union(top_vars, prev_topk_set))
@@ -599,14 +552,13 @@ screen_by_convergence2 <- function(alpha_code,
   flush.console()
   Sys.sleep(0.2)
 
-  ## --- eBird-style processing summary --------------------------------------
+  ## --- processing summary --------------------------------------------------
   t_end <- Sys.time()
   s <- as.numeric(difftime(t_end, t_start, units = "secs"))
   fmt_elapsed <- sprintf("%02d:%02d:%02d", s %/% 3600, (s %% 3600) %/% 60, round(s %% 60))
   log_file <- file.path(project_dir, "runs", alpha_code, "_log.txt")
   sep_line <- paste(rep("-", 72), collapse = "")
   ts_str   <- format(t_end, "%Y-%m-%d %H:%M:%S %Z")
-  header   <- "Processing summary (screen_by_convergence2)"
   f <- function(key, val) sprintf("%-18s : %s", key, val)
 
   last <- if (nrow(conv_trace)) conv_trace[nrow(conv_trace), ] else NULL
@@ -642,7 +594,7 @@ screen_by_convergence2 <- function(alpha_code,
   log_block <- c(
     "",
     sep_line,
-    header,
+    "Processing summary (screen_by_convergence2)",
     f("Timestamp",         ts_str),
     f("Alpha code",        alpha_code),
     f("Year",              year),

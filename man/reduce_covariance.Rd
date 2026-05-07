@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-reduce_covariance.R
 \name{reduce_covariance}
 \alias{reduce_covariance}
-\title{Reduce variable covariance}
+\title{Reduce variable covariance via adaptive VIF screening}
 \usage{
 reduce_covariance(
   alpha_code,
@@ -17,101 +17,66 @@ reduce_covariance(
 )
 }
 \arguments{
-\item{alpha_code}{Character. Species alpha code (for example, \code{"CASP"}).}
+\item{alpha_code}{Character. Species alpha code (e.g., \code{"CASP"}).}
 
-\item{year}{Integer vector, or \code{NULL}. Years to process; if
-\code{NULL} (default) the sequence 1980, 1985, ..., 2020 is used.}
+\item{year}{Integer vector or NULL. Years to process; NULL uses
+\code{seq(1980, 2020, by = 5)}.}
 
-\item{vif_threshold}{Numeric. VIF threshold passed to
-\code{usdm::vifstep()} (default 10).}
+\item{vif_threshold}{Numeric. VIF threshold for \code{usdm::vifstep()};
+default 10.}
 
-\item{sample_schedule}{Integer vector. Adaptive sample sizes tried in
-order; the routine stops early once the kept set stabilizes. Default
+\item{sample_schedule}{Integer vector. Adaptive sample sizes tried in order;
+stops early once the retained set stabilizes. Default
 \code{c(10000, 20000, 50000)}.}
 
-\item{stability_patience}{Integer. Consecutive identical kept sets needed
-for convergence (default 1).}
+\item{stability_patience}{Integer. Consecutive identical retained sets
+required for convergence; default 1.}
 
-\item{corr_threshold}{Numeric. Absolute Pearson correlation threshold used
-when listing high-correlation pairs (default 0.95).}
+\item{corr_threshold}{Numeric. Absolute Pearson correlation threshold for
+reporting high-correlation pairs; default 0.95.}
 
-\item{exclude_vars}{Character vector. Predictor names that must always be
-retained. Case-sensitive match against sampled column names (default
-\code{character(0)}).}
+\item{exclude_vars}{Character vector. Predictor names always retained
+regardless of VIF result; default \code{character(0)}.}
 
-\item{file_patterns}{Character vector. Regular expressions selecting raster
-filenames to include. Matching stems trigger companion \code{.asc} moves.
-Default \code{c("\\\\.tif$", "\\\\.grd$", "\\\\.img$", "\\\\.bil$")}.}
+\item{file_patterns}{Character vector. Regex patterns selecting raster
+filenames to include. Default
+\code{c("\\.tif$", "\\.grd$", "\\.img$", "\\.bil$")}.}
 
-\item{overwrite_results}{Logical. Overwrite an existing results CSV
-(default \code{TRUE}).}
+\item{overwrite_results}{Logical. Overwrite an existing results CSV;
+default TRUE.}
 }
 \value{
-Invisible list keyed by year containing:
-\itemize{
-  \item \code{kept} – character vector of retained predictors
-  \item \code{dropped} – character vector of removed predictors
-  \item \code{vif_table} – data frame of VIF results for all variables
-  \item \code{cor_pairs} – data frame of high-correlation pairs
-  \item \code{results_csv} – file path to the written CSV
-  \item \code{moved_to} – directory path for relocated rasters or
-        \code{NA} when none were moved
-}
+Invisible named list keyed by year. Each element contains:
+  \code{kept}, \code{dropped}, \code{vif_table}, \code{cor_pairs},
+  \code{results_csv}, \code{moved_to} (directory path or NA).
 }
 \description{
-Detects multicollinearity in the stagged predictor rasters through an
-adaptive Variable Inflation Factor (VIF) routine, records results, and
-retains only non-correlated variables for further processing.
+Detects multicollinearity in staged predictor rasters through an adaptive
+VIF routine, moves correlated predictors to a sub-directory, and writes a
+results CSV. Processes one or more 5-year time bins.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+Input rasters are read from
+\code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/}.
+The function samples \code{sample_schedule} sizes in order, running
+\code{usdm::vifstep()} at each size until the retained set is stable for
+\code{stability_patience} consecutive iterations.
 
-\strong{Pipeline context}
-\itemize{
-  \item Input rasters: \code{<project_dir>/runs/<alpha_code>/TimeSeries/
-        <year>/vars}
-  \item Log file: \code{<project_dir>/runs/<alpha_code>/_log.txt}
-}
-
-\strong{Inputs}
-\itemize{
-  \item Predictor rasters matching \code{file_patterns}
-  \item Optional exclusions via \code{exclude_vars}
-}
-
-\strong{Outputs}
+Outputs per year:
 \itemize{
   \item Results CSV: \code{_<alpha_code>-<year>-Correlation-Results.csv}
-  \item Directory of moved rasters (only if variables are dropped):
-        \code{_<alpha_code>-<year>-Correlated-Variables}
+  \item Moved rasters (only when variables are dropped):
+        \code{_<alpha_code>-<year>-Correlated-Variables/}
   \item Log entry appended to \code{_log.txt}
-}
-
-\strong{Methods}
-\itemize{
-  \item Adaptive sampling over \code{sample_schedule} sizes until the kept
-        set is stable for \code{stability_patience} iterations
-  \item Multicollinearity screening with \code{usdm::vifstep()}
-        at threshold \code{vif_threshold}
-  \item Reporting of high-correlation pairs where
-        \eqn{|r| \ge corr_threshold}
-}
-
-\strong{Data requirements}
-\itemize{
-  \item Raster layers must share identical geometry
-  \item Layer names must correspond to predictor identifiers
 }
 }
 \examples{
 \dontrun{
   reduce_covariance("CASP")
-  reduce_covariance("CASP", year = 2005,
-                    exclude_vars = c("bio1", "bio12"))
-  reduce_covariance("CASP", year = 2000,
-                    sample_schedule = c(8000, 16000, 32000, 64000))
+  reduce_covariance("CASP", year = 2005, exclude_vars = c("bio1", "bio12"))
 }
 
+}
+\seealso{
+\code{\link{rENM_project_dir}}, \code{\link{stage_screened_variables}}
 }

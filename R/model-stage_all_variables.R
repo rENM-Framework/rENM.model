@@ -1,86 +1,32 @@
 #' Stage environmental variables into TimeSeries bins
 #'
-#' Copies raster variables from run-level storage into TimeSeries bins,
-#' organizing predictors for downstream modeling while reporting progress
-#' and recording a processing summary in the run log.
+#' Copies raster variables (\code{.tif}, \code{.asc}) from the run-level
+#' \code{_vars/<year>/} directory into
+#' \code{TimeSeries/<year>/vars/} for downstream modeling.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
-#'
-#' \strong{Inputs}:
-#' Copies raster variables ('.tif', '.asc') from the run-level '_vars'
-#' directory into the corresponding TimeSeries directories:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{_vars/<year>/*.(tif|asc)}
-#'
-#' \strong{Outputs}:
-#' Files are staged into:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{TimeSeries/<year>/vars/*}
-#'
-#' Existing files are overwritten.
-#'
-#' \strong{Methods}:
-#' \itemize{
-#'   \item Recursively scans source directories for '.tif' and '.asc' files
-#'   \item Copies files into the target directory (flat structure)
-#'   \item Overwrites existing files
-#'   \item Warns on missing source directories
-#'   \item Warns on duplicate basenames (last file wins)
-#' }
-#'
-#' \strong{Logging}:
-#' A processing summary is appended to:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{_log.txt}
-#'
-#' including:
-#' \itemize{
-#'   \item Timestamp
-#'   \item Alpha code
-#'   \item Number of files transferred
-#'   \item File list
-#'   \item Total elapsed time
-#'   \item Output location
-#' }
+#' Files are copied flat (subdirectory structure is not preserved).
+#' Existing destination files are overwritten. Duplicate basenames within
+#' a year trigger a warning; the last file with that name wins.
+#' A processing summary is appended to the run log.
 #'
 #' @param alpha_code Character. Species alpha code (e.g., \code{"CASP"}).
 #' @param year Integer. Vector of 5-year bins. Default:
 #'   \code{seq(1980, 2020, by = 5)}.
-#' @param project_dir Character, NULL. Optional project root directory.
-#'   If NULL, resolved using \code{rENM_project_dir()}.
+#' @param project_dir Character. Path to the rENM project root. If NULL,
+#'   resolved via \code{\link{rENM_project_dir}}.
 #'
-#' @return Data frame (invisibly returned) with columns:
-#' \itemize{
-#'   \item \code{year}
-#'   \item \code{src_dir}
-#'   \item \code{dest_dir}
-#'   \item \code{files_found}
-#'   \item \code{files_copied}
-#'   \item \code{duplicates}
-#' }
+#' @return Invisible data frame with columns \code{year}, \code{src_dir},
+#'   \code{dest_dir}, \code{files_found}, \code{files_copied},
+#'   \code{duplicates}. Primary side effects are file copies, directory
+#'   creation, and a log entry appended to \code{_log.txt}.
 #'
-#' Side effects:
-#' \itemize{
-#'   \item Copies raster files into TimeSeries directories
-#'   \item Overwrites existing files in target directories
-#'   \item Appends a processing summary to the run log
-#'   \item Writes progress messages to the console
-#' }
-#'
+#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_occurrences}}
 #' @examples
 #' \dontrun{
 #'   stage_all_variables("CASP")
-#'   stage_all_variables("CASP", year = 2005)
 #'   stage_all_variables("CASP", year = c(1990, 2010, 2020))
-#'   stage_all_variables("CASP", project_dir = "/projects/rENM")
 #' }
-#'
 #' @export
 stage_all_variables <- function(alpha_code,
                                 year = seq(1980, 2020, by = 5),
@@ -92,7 +38,6 @@ stage_all_variables <- function(alpha_code,
   if (!is.character(alpha_code) || length(alpha_code) != 1L || !nzchar(alpha_code)) {
     stop("`alpha_code` must be a non-empty character(1).", call. = FALSE)
   }
-
   if (!is.numeric(year) || any(!is.finite(year)) || any(year %% 1 != 0)) {
     stop("`year` must be an integer vector (e.g., seq(1980, 2020, by = 5)).", call. = FALSE)
   }
@@ -135,7 +80,8 @@ stage_all_variables <- function(alpha_code,
       files_header, files_lines, "\n",
       sprintf("%-34s %s\n", "Outputs saved:", outputs_saved),
       sprintf("%-34s %s\n", "Total elapsed:", elapsed),
-      sprintf("%-34s %s\n", "Output file:", ifelse(is.na(output_file) || !nzchar(output_file), "-", output_file))
+      sprintf("%-34s %s\n", "Output file:",
+              ifelse(is.na(output_file) || !nzchar(output_file), "-", output_file))
     )
 
     con <- file(logfile, open = "a", encoding = "UTF-8")

@@ -2,12 +2,12 @@
 % Please edit documentation in R/model-plot_suitability.R
 \name{plot_suitability}
 \alias{plot_suitability}
-\title{Plot a climatic suitability raster with state boundaries and species range}
+\title{Plot a climatic suitability raster}
 \usage{
 plot_suitability(
   en,
   alpha_code,
-  state_shp = "~/rENM/data/shapefiles/tl_2012_us_state/tl_2012_us_state.shp",
+  state_shp = NULL,
   title = "Climatic Suitability Map",
   limits = c(0, 1),
   layer = 1L,
@@ -15,101 +15,47 @@ plot_suitability(
 )
 }
 \arguments{
-\item{en}{SpatRaster, Character, Raster. A suitability raster. One of:
-a terra SpatRaster, a single-file path (character) to a raster
-readable by terra rast(), or a raster::Raster* object converted
-internally to SpatRaster.}
+\item{en}{SpatRaster, Character, or Raster. A suitability raster.}
 
-\item{alpha_code}{Character. Species code used to look up GAP.RANGE via
-get_species_info(alpha_code) and, from that, the species range
-shapefile under
-\code{<project_dir>/data/shapefiles/<gap_range>/}
-\code{<gap_range>.shp}}
+\item{alpha_code}{Character. Species code used to look up \code{GAP.RANGE}
+via \code{get_species_info()}.}
 
-\item{state_shp}{Character. Path to a states or administrative
-boundaries shapefile (.shp). Defaults to
-\code{<project_dir>/data/shapefiles/tl_2012_us_state/}
-\code{tl_2012_us_state.shp}}
+\item{state_shp}{Character. Path to a states/administrative-boundaries
+shapefile. Default resolves to
+\code{<project_dir>/data/shapefiles/tl_2012_us_state/tl_2012_us_state.shp}.}
 
-\item{title}{Character. Plot title. Default "Climatic Suitability Map".}
+\item{title}{Character. Plot title. Default \code{"Climatic Suitability Map"}.}
 
-\item{limits}{Numeric. Length-2 vector giving the lower and upper
-limits of the color scale (default c(0, 1)).}
+\item{limits}{Numeric. Length-2 vector for the color scale limits; default
+\code{c(0, 1)}.}
 
-\item{layer}{Integer. Band index to plot when en has multiple layers
-(default 1L).}
+\item{layer}{Integer. Band index when \code{en} has multiple layers;
+default 1L.}
 
-\item{minor_div}{Integer. Number of minor grid divisions between major
-axis breaks (default 2L).}
+\item{minor_div}{Integer. Minor grid divisions between major axis breaks;
+default 2L.}
 }
 \value{
-A ggplot object.
-Side effects:
-\itemize{
-  \item None. The function returns a plot object without writing files.
-}
+A ggplot2 object. No files are written.
 }
 \description{
-Build a ggplot2 map of continuous climatic suitability values from a
-raster and overlay state or administrative boundaries plus a species
-range polygon. If the raster has multiple layers, layer selects which
-to plot.
+Build a ggplot2 map of continuous climatic suitability values from a raster,
+overlaid with state boundaries and the species GAP range polygon.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
-
-\strong{Pipeline context}
-Build a ggplot2 map of continuous climatic suitability values from a
-raster (e.g., 0-1) and overlay state or administrative boundaries
-plus a species range polygon. If the raster has multiple layers,
-\code{layer} selects which to plot.
-
-The species range shapefile is looked up via an internal helper
-\code{get_species_info(alpha_code)}, which must return a component
-\code{GAP.RANGE}. The shapefile is then read from:
-\code{<project_dir>/data/shapefiles/<gap_range>/}
-\code{<gap_range>.shp}
-
-\strong{Inputs}
-\itemize{
-  \item A suitability raster provided as a SpatRaster, file path, or
-  raster object.
-  \item Species code used to look up GAP.RANGE via
-  \code{get_species_info(alpha_code)}.
-  \item Path to a states or administrative boundaries shapefile.
-}
-
-\strong{Outputs}
-\itemize{
-  \item A ggplot object representing the climatic suitability surface
-  with state boundaries and species range overlays.
-}
-
-\strong{Methods}
-\itemize{
-  \item The state and species-range vectors are reprojected to the
-  raster CRS (if set) to ensure alignment.
-  \item The color scale uses a smooth multi-hue palette via
-  \code{grDevices::colorRampPalette()}.
-  \item NA cell values render transparent.
-}
-
-\strong{Data requirements}
-\itemize{
-  \item Species range shapefile located at:
-  \code{<project_dir>/data/shapefiles/<gap_range>/}
-  \code{<gap_range>.shp}
-  \item Default state shapefile located at:
-  \code{<project_dir>/data/shapefiles/tl_2012_us_state/}
-  \code{tl_2012_us_state.shp}
-}
+The species range shapefile is resolved via \code{get_species_info(alpha_code)},
+which looks up \code{GAP.RANGE} and reads the shapefile from
+\code{<project_dir>/data/shapefiles/<gap_range>/<gap_range>.shp}.
+State and range vectors are reprojected to the raster CRS if necessary.
+NA raster cells render transparent.
 }
 \examples{
 \dontrun{
-# Example usage:
-plot_suitability(en, "CASP")
+  p <- plot_suitability(en, "CASP")
+  p <- plot_suitability(en, "CASP", title = "CASP 2000 Suitability")
 }
 
+}
+\seealso{
+\code{\link{save_suitability_plot}}, \code{\link{rENM_project_dir}}
 }

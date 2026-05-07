@@ -1,87 +1,36 @@
-#' Stage occurrence CSVs into time series bins
+#' Stage occurrence CSVs into TimeSeries bins
 #'
-#' Copies per-bin occurrence files into the TimeSeries structure for
-#' downstream modeling while ensuring consistency with preprocessing
-#' outputs and recording a detailed audit log.
+#' Copies per-bin occurrence files from the run-level \code{_occs} directory
+#' into \code{TimeSeries/<year>/occs/} for downstream modeling.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
-#'
-#' \strong{Inputs}:
-#' Copies per-bin occurrence files (\code{of-<year>.csv}) from:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{_occs/of-<year>.csv}
-#'
-#' \strong{Outputs}:
-#' Files are staged into:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{TimeSeries/<year>/occs/of-<year>.csv}
-#'
-#' Existing files are overwritten to ensure consistency with the latest
-#' preprocessing outputs.
-#'
-#' \strong{Methods}:
-#' \itemize{
-#'   \item Validates requested years (must be (1980, 2020), divisible by 5)
-#'   \item Creates destination directories as needed
-#'   \item Copies files using \code{file.copy(..., overwrite = TRUE)}
-#'   \item Records per-year status: Copied, Missing, or Error
-#'   \item Aggregates results into a structured log block
-#' }
-#'
-#' \strong{Logging}:
-#' A standardized summary is appended to:
-#'
-#' \code{<project_dir>/runs/<alpha_code>/}
-#' \code{_log.txt}
-#'
-#' including:
-#' \itemize{
-#'   \item Timestamp and alpha code
-#'   \item Per-year staging table
-#'   \item Counts (total, copied, missing)
-#'   \item Output paths (multi-line)
-#'   \item Total elapsed time
-#' }
-#'
-#' Each run is separated by a 72-character divider for readability.
+#' Source files (\code{of-<year>.csv}) are read from
+#' \code{<project_dir>/runs/<alpha_code>/_occs/}
+#' and written to
+#' \code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/occs/}.
+#' Existing destination files are overwritten.
+#' A formatted audit block is appended to the run log and echoed to the console.
 #'
 #' @param alpha_code Character. Species alpha code (e.g., \code{"CASP"}).
-#' @param year Integer. Vector of 5-year bins. Default:
-#'   \code{seq(1980, 2020, 5)}.
-#' @param project_dir Character, NULL. Optional project root directory.
-#'   If NULL, resolved using \code{rENM_project_dir()}.
+#' @param year Integer. Vector of 5-year bins in \{1980, 1985, ..., 2020\}.
+#'   Default: \code{seq(1980, 2020, 5)}.
+#' @param project_dir Character. Path to the rENM project root. If NULL,
+#'   resolved via \code{\link{rENM_project_dir}}.
 #'
-#' @return List (invisibly returned) with elements:
-#' \itemize{
-#'   \item \code{alpha_code}: Character species alpha code
-#'   \item \code{years}: Integer vector of processed years
-#'   \item \code{copied_paths}: Character vector of copied file paths
-#'   \item \code{counts}: List with elements total_years, valid_files,
-#'         copied_files, missing_files
-#'   \item \code{elapsed_seconds}: Numeric elapsed time in seconds
-#'   \item \code{log_file}: Character path to the run log file
-#' }
+#' @return Invisible list with elements:
+#'   \code{alpha_code}, \code{years}, \code{copied_paths},
+#'   \code{counts} (list: \code{total_years}, \code{valid_files},
+#'   \code{copied_files}, \code{missing_files}),
+#'   \code{elapsed_seconds}, \code{log_file}.
+#'   Primary side effects are file copies, directory creation, and a log
+#'   entry appended to \code{_log.txt}.
 #'
-#' Side effects:
-#' \itemize{
-#'   \item Copies occurrence CSV files into TimeSeries directories
-#'   \item Overwrites existing files in destination directories
-#'   \item Appends a processing summary to the run log
-#'   \item Writes audit output to the console
-#' }
-#'
+#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_all_variables}}
 #' @examples
 #' \dontrun{
 #'   stage_occurrences("CASP")
-#'   stage_occurrences("CASP", year = 1990)
 #'   stage_occurrences("CASP", year = c(1980, 2000, 2015))
 #' }
-#'
 #' @export
 stage_occurrences <- function(alpha_code,
                               year = seq(1980, 2020, 5),
@@ -146,7 +95,6 @@ stage_occurrences <- function(alpha_code,
       valid_files  <- valid_files + 1L
       copied_files <- copied_files + 1L
       copied_paths <- c(copied_paths, dest)
-
       per_year_lines <- c(per_year_lines,
                           sprintf("%-6d %-10s %s", yr, "Copied", dest))
     } else {

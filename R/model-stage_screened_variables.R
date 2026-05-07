@@ -1,77 +1,54 @@
-#' Stage screened environmental variables into the time series
+#' Stage screened environmental variables into TimeSeries bins
 #'
-#' Stage (copy) ranked raster predictor layers into per-year TimeSeries
-#' directories based on a master variable-ranking table. Supports several
-#' ranking metrics and an optional top-N filter.
+#' Copies ranked raster predictor layers into per-year
+#' \code{TimeSeries/<year>/vars/} directories based on a variable-ranking
+#' CSV produced by \code{\link{screen_by_convergence1}} or
+#' \code{\link{screen_by_convergence2}}. Supports several ranking metrics
+#' and an optional top-N filter.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
+#' Source rasters are read from
+#' \code{<project_dir>/runs/<alpha_code>/_vars/<year>/}.
+#' Rankings are read from
+#' \code{<project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/}
+#' \code{_<alpha_code>-<year>-Variable-Ranking.csv}.
+#' A processing summary is appended to the run log.
 #'
-#' \strong{Inputs}
+#' Supported \code{rank_method} values and the corresponding ranking column:
 #' \itemize{
-#'   \item Master ranking CSV, one per year:
-#'     \code{<proj_root>/runs/<alpha_code>/TimeSeries/<year>/vars/}
-#'     \code{_<alpha_code>-<year>-Variable-Ranking.csv}
-#'   \item Source rasters:
-#'     \code{<proj_root>/runs/<alpha_code>/_vars/<year>/}
+#'   \item \code{"ratio"} -- \code{rank_ratio} (default)
+#'   \item \code{"ranksum"} -- \code{rank_ranksum}
+#'   \item \code{"medianPI"} -- \code{rank_medianPI}
+#'   \item \code{"wz"} -- \code{rank_wz}
 #' }
 #'
-#' \strong{Outputs}
-#' \itemize{
-#'   \item Ranked rasters copied to:
-#'     \code{<proj_root>/runs/<alpha_code>/TimeSeries/<year>/vars/}
-#'   \item Per-year status line and a 72-dash summary appended to:
-#'     \code{<proj_root>/runs/<alpha_code>/_log.txt}
-#' }
-#'
-#' \strong{Methods}
-#' \itemize{
-#'   \item Ranking columns:
-#'     \code{rank_ranksum}, \code{rank_medianPI},
-#'     \code{rank_ratio}, \code{rank_wz}
-#'   \item Tie-breakers use the associated score column
-#'     (higher or lower depending on metric).
-#' }
-#'
-#' \strong{Data requirements}
-#' \itemize{
-#'   \item Years must be multiples of five in the range
-#'     \code{\{1980, 1985, ..., 2020\}}.
-#'   \item Raster filenames must match the \code{var} column
-#'     in the ranking CSV.
-#' }
-#'
-#' @param alpha_code Character. Species alpha code (e.g., "CASP"). Used to
-#'   resolve paths under the project \code{runs} directory.
-#' @param year Integer. Vector of years or single year. Defaults to
-#'   \code{seq(1980, 2020, 5)}. Each value must be a 5-year step within
-#'   1980-2020.
+#' @param alpha_code Character. Species alpha code (e.g., \code{"CASP"}).
+#' @param year Integer. Vector of 5-year bins in \{1980, 1985, ..., 2020\}.
+#'   Default: \code{seq(1980, 2020, 5)}.
 #' @param top_n Integer or NULL. Number of top-ranked variables to stage per
-#'   year. Default = 10; use \code{NULL} to copy all variables.
-#' @param rank_method Character. One of "ranksum","medianPI","ratio","wz".
-#'   Selects the ranking column used to order variables. Default = "ratio".
+#'   year; NULL copies all variables. Default 10.
+#' @param rank_method Character. Ranking metric; one of \code{"ranksum"},
+#'   \code{"medianPI"}, \code{"ratio"}, \code{"wz"}. Default \code{"ratio"}.
 #'
-#' @return Invisible named list with:
-#' \itemize{
-#'   \item \code{alpha_code} Character
-#'   \item \code{years} Integer vector
-#'   \item \code{rank_method} Character
-#'   \item \code{top_n} Integer or NULL
-#'   \item \code{copied_paths} Character vector
-#'   \item \code{counts} List: \code{total_years}, \code{attempted_files},
-#'     \code{copied_files}, \code{missing_files},
-#'     \code{years_missing_ranking}
-#'   \item \code{elapsed_seconds} Numeric
-#'   \item \code{log_file} Character
-#' }
+#' @return Invisible named list with elements:
+#'   \code{alpha_code}, \code{years}, \code{rank_method}, \code{top_n},
+#'   \code{copied_paths},
+#'   \code{counts} (list: \code{total_years}, \code{attempted_files},
+#'   \code{copied_files}, \code{missing_files},
+#'   \code{years_missing_ranking}),
+#'   \code{elapsed_seconds}, \code{log_file}.
+#'   Primary side effects are file copies, directory creation, and a log
+#'   entry appended to \code{_log.txt}.
 #'
+#' @seealso \code{\link{screen_by_convergence1}},
+#'   \code{\link{screen_by_convergence2}},
+#'   \code{\link{rENM_project_dir}}
 #' @importFrom utils read.csv
 #'
 #' @examples
 #' \dontrun{
-#' stage_screened_variables("CASP", top_n = 5, rank_method = "medianPI")
+#'   stage_screened_variables("CASP")
+#'   stage_screened_variables("CASP", top_n = 5, rank_method = "medianPI")
 #' }
 #'
 #' @export
@@ -93,7 +70,7 @@ stage_screened_variables <- function(alpha_code,
     wz       = "rank_wz"
   )
   score_col_map <- c(
-    ranksum  = "ranksum_score",  # NOTE: lower is better for tie-breaks
+    ranksum  = "ranksum_score",  # lower is better for tie-breaks
     medianPI = "median_PI",
     ratio    = "ratio_score",
     wz       = "wz_score"
@@ -108,7 +85,7 @@ stage_screened_variables <- function(alpha_code,
   } else if (length(year) >= 1 && all(year %in% valid_steps)) {
     years <- as.integer(year)
   } else {
-    stop("Invalid 'year'. Use a single 5-year step within 1980 - 2020 ",
+    stop("Invalid 'year'. Use a single 5-year step within 1980-2020 ",
          "or a vector subset of 1980, 1985, ..., 2020.")
   }
 
@@ -156,7 +133,6 @@ stage_screened_variables <- function(alpha_code,
       next
     }
 
-    # Ensure required columns exist
     var_col <- if ("var" %in% names(rnk_df)) "var" else {
       idx <- match("var", tolower(names(rnk_df)))
       if (is.na(idx)) NA_character_ else names(rnk_df)[idx]
@@ -175,7 +151,6 @@ stage_screened_variables <- function(alpha_code,
       next
     }
 
-    # ---- Fixed ordering: build full-length tie-breaker & correct direction ---
     score_vec <- if (chosen_score_col %in% names(rnk_df)) rnk_df[[chosen_score_col]] else rep(0, nrow(rnk_df))
     decreasing_score <- rank_method %in% c("medianPI", "wz", "ratio")
     tie_vec <- if (decreasing_score) -score_vec else score_vec
@@ -190,7 +165,6 @@ stage_screened_variables <- function(alpha_code,
       next
     }
 
-    # Restrict to top_n if provided
     if (!is.null(top_n) && length(vars_list) > top_n) {
       vars_list <- vars_list[seq_len(top_n)]
     }
@@ -274,12 +248,7 @@ stage_screened_variables <- function(alpha_code,
     sprintf("%-20s %s seconds\n", "Total elapsed:", elapsed)
   )
 
-  # Append summaries to the run log
-  # cat(yearly_text,  file = log_file, append = TRUE)
   cat(summary_text, file = log_file, append = TRUE)
-
-  # Echo to console as well (optional)
-  # cat(yearly_text)
   cat(summary_text)
 
   invisible(list(

@@ -1,67 +1,55 @@
-#' Parse and rank relative variable importance from an SDM text report
+#' Parse and rank variable importance from an SDM text report
 #'
-#' Parse a "Relative Variable Importance" style text report and return a
-#' tidy data.frame. Supports multiple metric sections and optional
-#' aggregation across metrics for variable ranking.
+#' Parse a "Relative Variable Importance" style text report and return a tidy
+#' data frame. Supports multiple metric sections and optional aggregation
+#' across metrics.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
-#'
-#' \strong{Inputs}
 #' The parser expects one or more metric sections of the form:
-#' \itemize{
-#'   \item Based on <Metric> metric:
-#'   \item var1 (40\%)
-#'   \item var2 (20\%)
-#'   \item ====
+#' \preformatted{
+#'   Based on <Metric> metric:
+#'   var1 (40%)
+#'   var2 (20%)
+#'   ====
 #' }
 #'
-#' Input forms:
+#' \strong{Input forms:}
 #' \itemize{
-#'   \item If input is a path to a readable file, the file is read
-#'         line-by-line.
-#'   \item If input is a single character string containing the entire
-#'         report, it is split on \\n.
-#'   \item If input is a character vector, it is treated as pre-split
-#'         lines.
+#'   \item A path to a readable file (read line-by-line).
+#'   \item A single character string (split on \code{\\n}).
+#'   \item A character vector (treated as pre-split lines).
 #' }
 #'
-#' \strong{Variable line parsing}
-#' Lines like varname (12.3\%). Variable names may include letters,
-#' digits, underscores, hyphens, and dots. If a line does not match
-#' the strict pattern, a more permissive fallback (.*)\\((number)\%) is
-#' attempted. Percentages are parsed as numeric and are not constrained
-#' to (0, 100).
+#' Variable names may include letters, digits, underscores, hyphens, and dots.
+#' A permissive fallback regex is tried when the strict pattern fails.
+#' Percentages are not constrained to \code{(0, 100)}.
 #'
-#' \strong{Metric section headers}
-#' Lines of the form Based on <Metric> metric: start sections. A section
-#' is terminated by the next header or a separator line of = characters.
+#' When \code{combine_metrics = TRUE}, values are averaged across metrics
+#' (\code{mean(..., na.rm = TRUE)}) and sorted descending by percent.
 #'
-#' \strong{Combining metrics}
-#' When combine_metrics = TRUE, values are averaged using mean(...,
-#' na.rm = TRUE). Sorting is descending by percent, then variable.
+#' When \code{log = TRUE}, a summary block is appended to
+#' \code{<project_dir>/runs/<alpha_code>/_log.txt} (if \code{alpha_code} is
+#' supplied) or to \code{log_path}.
 #'
-#' \strong{Logging behavior}
-#' When log = TRUE, a summary block is appended to:
-#' \code{<rENM_project_dir()>/runs/<ALPHA_CODE>/}
-#' \code{_log.txt}
+#' @param input Character. File path, single string, or vector of lines.
+#' @param combine_metrics Logical. Average across metrics if TRUE. Default TRUE.
+#' @param log Logical. Write summary to log. Default FALSE.
+#' @param log_path Character. Optional explicit log file path.
+#' @param alpha_code Character. Optional 4-letter species code used to resolve
+#'   the default log path when \code{log_path} is not supplied.
 #'
-#' @param input Character. File path or text input.
-#' @param combine_metrics Logical. Average across metrics if TRUE.
-#' @param log Logical. Write summary to log.
-#' @param log_path Character. Optional log file path.
-#' @param alpha_code Character. Optional 4-letter code.
+#' @return Data frame with columns \code{variable} and \code{percent}
+#'   (combined) or additionally \code{metric} (uncombined), sorted by
+#'   descending importance.
 #'
-#' @return Data frame with ranked variable importance.
-#'
+#' @seealso \code{\link{create_ensemble_model}}, \code{\link{rENM_project_dir}}
 #' @importFrom stats aggregate
 #' @importFrom utils head
 #'
 #' @examples
 #' \dontrun{
-#' df <- rank_variable_importance("file.txt")
+#'   df <- rank_variable_importance("file.txt")
+#'   df <- rank_variable_importance(pi0, combine_metrics = TRUE)
 #' }
 #'
 #' @export
@@ -97,19 +85,13 @@ rank_variable_importance <- function(
     invisible(TRUE)
   }
 
-  # -------------------------------------------------------------------------
-  # Internal logging utilities (rENM standard)
-  # -------------------------------------------------------------------------
-
-  #' @keywords internal
+  # Internal logging utilities
   .sep_line <- strrep("-", 72)
 
-  #' @keywords internal
   .pad_kv <- function(key, value) {
     sprintf("%-22s : %s", key, value)
   }
 
-  #' @keywords internal
   .stamp <- function() {
     format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
   }

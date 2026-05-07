@@ -1,69 +1,124 @@
 # rENM.model
 
-![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-model-informational)
+![rENM](https://img.shields.io/badge/rENM-framework-blue)
+![module](https://img.shields.io/badge/module-model-informational)
 
 **Modeling and reconstruction engine for the rENM Framework**
 
 ## Overview
 
-`rENM.model` implements the core ecological niche modeling and historical reconstruction workflows within the rENM Framework. It transforms standardized occurrence and environmental data into time-resolved estimates of climatic suitability.
+`rENM.model` implements the core ecological niche modeling and historical
+reconstruction workflows within the rENM Framework. It transforms standardized
+occurrence and environmental data into time-resolved estimates of climatic
+suitability.
 
-This package focuses on **model construction, variable screening, and temporal reconstruction**.
+This package depends on `rENM.core` for project-directory resolution and
+species metadata access. All functions accept an optional `project_dir`
+argument; see `?rENM_project_dir` for configuration options.
 
-## Role in the rENM Framework
+## Key functions
 
-Within the modular rENM ecosystem, `rENM.model`: - Prepares staged inputs for modeling workflows - Performs **variable screening and selection** - Builds **ensemble ecological niche models** - Generates **time series of climatic suitability** - Produces spatial outputs (e.g., range maps, suitability surfaces)
-
-It is the computational core that converts prepared data into modeled niche dynamics.
-
-## Key Functions
-
--   `stage_occurrences()` — Prepare occurrence data for modeling
--   `stage_all_variables()` — Assemble full predictor sets
--   `screen_by_convergence1()` / `screen_by_convergence2()` — Monte Carlo-based variable screening
--   `reduce_covariance()` — Remove collinearity among predictors
--   `stage_screened_variables()` — Finalize selected variable sets
--   `create_ensemble_model()` — Build ensemble ENM models
--   `create_timeseries()` — Generate temporal suitability outputs
--   `create_range_map()` — Produce spatial range estimates
--   `plot_suitability()` / `save_suitability_plot()` — Visualization utilities
--   `rank_variable_importance()` — Evaluate predictor contributions
+| Function | Description |
+|---|---|
+| `stage_occurrences()` | Copy occurrence CSVs into TimeSeries bins |
+| `stage_all_variables()` | Copy predictor rasters into TimeSeries bins |
+| `screen_by_convergence1()` | Convergence-based variable screening via dismo MaxEnt (requires Java) |
+| `screen_by_convergence2()` | Convergence-based variable screening via native R maxnet (no Java dependency) |
+| `reduce_covariance()` | Remove collinear predictors via adaptive VIF screening |
+| `stage_screened_variables()` | Copy ranked predictors into TimeSeries bins |
+| `create_ensemble_model()` | Fit an ensemble ENM for a single species and time bin |
+| `create_timeseries()` | Run `create_ensemble_model()` across all time bins in parallel |
+| `create_range_map()` | Produce a binary presence-absence range map |
+| `plot_suitability()` | Plot a continuous climatic suitability raster |
+| `save_suitability_plot()` | Save a suitability ggplot to disk |
+| `rank_variable_importance()` | Parse and rank variable importance from an SDM report |
 
 ## Installation
 
-``` r
+```r
+# From GitHub
+devtools::install_github("rENM-Framework/rENM.model")
+
+# From a local source directory
 devtools::install_local("rENM.model")
 ```
 
-## Example
+## Getting started
 
-``` r
+Set up a project directory and preprocess occurrence and predictor data first
+(see `rENM.data`), then run the modeling pipeline in order:
+
+```r
 library(rENM.model)
 
-# stage inputs
-stage_occurrences("CASP")
-stage_all_variables("CASP")
+proj <- "/path/to/your/rENM/project"
 
-# screen variables
-screen_by_convergence1("CASP")
-screen_by_convergence2("CASP")
+# 1. Stage occurrence and predictor data into TimeSeries bins
+stage_occurrences("CASP", project_dir = proj)
+stage_all_variables("CASP", project_dir = proj)
 
-# build model
-create_ensemble_model("CASP")
+# 2. Screen variables (use convergence2 for a Java-free workflow)
+screen_by_convergence2("CASP", project_dir = proj)
 
-# generate time series
-create_timeseries("CASP")
+# 3. Remove collinear predictors and finalize variable sets
+reduce_covariance("CASP", project_dir = proj)
+stage_screened_variables("CASP", project_dir = proj)
+
+# 4. Fit models and generate the full time series
+create_ensemble_model("CASP", year = 2000, project_dir = proj)
+create_timeseries("CASP", project_dir = proj)
 ```
 
-## Relationship to Other Packages
+For interactive work, configure the project directory once per session to
+avoid passing it to every function:
 
-`rENM.model` provides the modeled outputs used by all downstream analysis and reporting layers.
+```r
+options(rENM.project_dir = "/path/to/your/rENM/project")
+
+stage_occurrences("CASP")
+stage_all_variables("CASP")
+# ...
+```
+
+## Modeling pipeline
+
+```
+stage_occurrences()
+stage_all_variables()
+        ↓
+screen_by_convergence1()  or  screen_by_convergence2()  (Java-free)
+        ↓
+reduce_covariance()
+        ↓
+stage_screened_variables()
+        ↓
+create_ensemble_model()   ← single time bin
+        ↓
+create_timeseries()       ← all bins in parallel
+```
+
+Variable screening reads from the run-level `_occs/` and `_vars/` directories.
+Staging functions copy files into `TimeSeries/<year>/occs/` and
+`TimeSeries/<year>/vars/`. Model outputs are written to
+`TimeSeries/<year>/model/`.
+
+## Role in the rENM framework
+
+`rENM.model` is the third stage in the pipeline:
+
+```
+rENM.core → rENM.data → rENM.model → rENM.analysis → rENM.ai → rENM.reports
+```
+
+It consumes the run directory structure and preprocessed data produced by
+`rENM.data` and generates the modeled suitability surfaces and range maps
+consumed by `rENM.analysis`.
 
 ## License
 
 See `LICENSE` for details.
 
-------------------------------------------------------------------------
+---
 
-**rENM Framework**\
-A modular system for reconstructing and analyzing long-term ecological niche dynamics.
+**rENM Framework** — A modular system for reconstructing and analyzing
+long-term ecological niche dynamics.

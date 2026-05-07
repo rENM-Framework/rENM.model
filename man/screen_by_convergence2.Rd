@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-screen_by_convergence2.R
 \name{screen_by_convergence2}
 \alias{screen_by_convergence2}
-\title{Iterative bivariate ENM screening with adaptive, stability-aware convergence}
+\title{Iterative bivariate ENM screening via native maxnet (convergence 2)}
 \usage{
 screen_by_convergence2(
   alpha_code,
@@ -19,10 +19,10 @@ screen_by_convergence2(
 )
 }
 \arguments{
-\item{alpha_code}{Character. Species or run code (e.g., "CASP").}
+\item{alpha_code}{Character. Species or run code (e.g., \code{"CASP"}).}
 
 \item{year}{Integer, Character, or NULL. Year to process; NULL runs all
-5-year intervals 1980-2020.}
+5-year intervals 1980--2020.}
 
 \item{max_iter}{Integer. Maximum iterations safeguard; default 50.}
 
@@ -35,7 +35,7 @@ default 0.5.}
 \item{background_n}{Integer. Background points per model; default 2500.}
 
 \item{seed}{Integer or NULL. RNG seed; NULL draws a random seed that is
-returned.}
+returned in the result.}
 
 \item{ncores}{Integer. CPU cores for parallel fits; default
 \code{max(1, parallel::detectCores() - 1)}.}
@@ -43,86 +43,58 @@ returned.}
 \item{fast}{Logical. Enable fast triage mode; default FALSE.}
 
 \item{set_threshold}{Numeric. Jaccard threshold for membership stability;
-default 0.90. Must lie in \code{(0, 1)}.}
+default 0.90.}
 
 \item{passes_required}{Integer or NULL. Consecutive passes needed for
 convergence; NULL defaults to 1 in fast mode, else 2.}
 }
 \value{
-A list (invisible) with:
+Invisible list with elements:
 \describe{
   \item{\code{importance_summary}}{Data frame of variable-wise PI statistics
         and rank diagnostics.}
   \item{\code{convergence_trace}}{Data frame with per-iteration diagnostics.}
-  \item{\code{output_files}}{Named vector with paths to the two CSV files.}
-  \item{\code{seed_used}}{Integer seed actually used in this run.}
+  \item{\code{output_files}}{Named list with paths to the ranking and
+        convergence-trace CSV files.}
+  \item{\code{seed_used}}{Integer seed used in this run.}
 }
-Side effects: two CSV files and a log block are written to disk inside the
-project directory.
+Side effects: two CSV files and a log block are written to disk.
 }
 \description{
-Repeatedly fits bivariate \code{maxnet} ecological niche models, aggregates
-permutation importance (PI) scores, and stops when both the mean PI and
-membership of the adaptive top-k variable set stabilize. Designed for rapid,
-reproducible predictor down-selection across 5-year intervals without the
-Java dependency required by \code{dismo::maxent()}.
+Repeatedly fits bivariate \code{maxnet} models, aggregates permutation
+importance (PI) scores, and stops when both the mean PI and membership of
+the adaptive top-k variable set stabilize. Identical convergence logic to
+\code{\link{screen_by_convergence1}} but uses \pkg{maxnet} instead of
+Java-based \pkg{dismo} MaxEnt, eliminating the Java dependency.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-\code{rENM_project_dir()}.
+Reads occurrences from \code{runs/<alpha_code>/_occs/of-<year>.csv} and
+raster predictors from \code{runs/<alpha_code>/_vars/<year>/}.
+Writes a variable-ranking CSV and a convergence-trace CSV to
+\code{runs/<alpha_code>/TimeSeries/<year>/vars/}.
 
-\strong{Pipeline context}
+Background points are drawn directly from non-NA raster cells using
+\code{raster::sampleRandom(xy = TRUE, na.rm = TRUE)}.
+Permutation importance is computed as a MaxEnt-like AUC-drop metric:
+each predictor is permuted in turn, the drop in training AUC is measured
+without refitting, and drops are normalized to percentages summing to 100
+within each bivariate model.
+
+\strong{Convergence criteria} (both must pass):
 \itemize{
-  \item Reads occurrences from \code{runs/<alpha_code>/_occs/of-<year>.csv}
-  \item Reads raster predictors from \code{runs/<alpha_code>/_vars/<year>/}
-  \item Writes outputs to
-        \code{runs/<alpha_code>/TimeSeries/<year>/vars/}
-}
-
-\strong{Inputs}
-\itemize{
-  \item Occurrence table with \code{longitude}, \code{latitude}
-  \item At least two GeoTIFF predictor layers
-}
-
-\strong{Methods}
-The function repeatedly samples bivariate predictor pairs and fits
-\code{maxnet} models using occurrence and background environmental values
-extracted from the selected raster layers. Background points are drawn
-directly from non-\code{NA} raster cells using
-\code{raster::sampleRandom(xy = TRUE, na.rm = TRUE)}, eliminating the need
-for \code{dismo::randomPoints()}.
-
-For each fitted pair, permutation importance is computed manually in a
-MaxEnt-like way: each predictor is permuted in turn on the model evaluation
-table, predictions are recomputed without refitting, the drop in training AUC
-is measured, and the resulting drops are normalized to percentages summing to
-100 across the two predictors in that bivariate model. This produces a
-permutation-based importance metric analogous in spirit to Java MaxEnt's
-permutation importance, while remaining fully native to R.
-
-Convergence requires both tests to pass:
-\itemize{
-  \item \emph{Mean stability} - relative change in top-k mean PI below an
-        adaptive threshold (\code{10\%} if \eqn{p \le 20},
-        \code{7.5\%} if \eqn{21 \le p \le 40}, else \code{5\%}).
-  \item \emph{Membership stability} - Jaccard overlap of consecutive
+  \item \emph{Mean stability} -- relative change in top-k mean PI below an
+        adaptive threshold (10\% if \eqn{p \le 20},
+        7.5\% if \eqn{21 \le p \le 40}, else 5\%).
+  \item \emph{Membership stability} -- Jaccard overlap of consecutive
         top-k sets above \code{set_threshold}.
 }
-Adaptive top-k: \eqn{k=\min(12,\max(5,\mathrm{round}(\sqrt{p})))}. Batch
-sampling defaults to \code{max(1, floor(1.5 * sqrt(p)))} appearances per
-variable and is halved in \code{fast} mode. Parallel execution uses
-deterministic RNG streams.
+Adaptive top-k: \eqn{k = \min(12, \max(5, \mathrm{round}(\sqrt{p})))}.
+Batch sampling defaults to \code{max(1, floor(1.5 * sqrt(p)))} appearances
+per variable (halved in \code{fast} mode). Parallel execution uses
+deterministic per-worker RNG streams. Balanced pairing prevents self-pairs.
 
-\strong{Outputs}
-\itemize{
-  \item Variable ranking CSV
-  \item Convergence trace CSV
-  \item Log entry appended to \code{_log.txt}
-}
-
-If \code{year = NULL}, all 5-year intervals 1980-2020 are processed.
+If \code{year = NULL}, all 5-year intervals 1980--2020 are processed in
+sequence.
 }
 \examples{
 \dontrun{
@@ -135,6 +107,5 @@ res <- screen_by_convergence2("CASP", 1990, seed = 42)
 
 }
 \seealso{
-\code{\link[maxnet]{maxnet}},
-\code{\link[raster]{stack}}
+\code{\link{screen_by_convergence1}}, \code{\link{rENM_project_dir}}
 }

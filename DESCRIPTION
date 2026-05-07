@@ -5,11 +5,11 @@ Version: 0.1.0.9000
 Author: John L. Schnase
 Maintainer: John L. Schnase <rENM.Framework@gmail.com>
 ORCID: 0000-0001-7473-3977
-Description: The rENM framework is a modular sysem for 
-    reconstucting and analyzing long-term ecological niche 
-    dynamics using time-indexed environmental data and species 
-    occurrence records. Its packages support climate-based 
-    niche modeling, temporal analysis of climatic suitability, 
+Description: The rENM framework is a modular system for
+    reconstructing and analyzing long-term ecological niche
+    dynamics using time-indexed environmental data and species
+    occurrence records. Its packages support climate-based
+    niche modeling, temporal analysis of climatic suitability,
     and reproducible workflows for studying ecological change.
 License: MIT + file LICENSE
 Encoding: UTF-8
