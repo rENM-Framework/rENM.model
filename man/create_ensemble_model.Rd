@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-create_ensemble_model.R
 \name{create_ensemble_model}
 \alias{create_ensemble_model}
-\title{Build an ensemble ENM for a species and time slice}
+\title{Build an ensemble ENM and derived products for a species}
 \usage{
 create_ensemble_model(
   alpha_code,
@@ -19,83 +19,123 @@ create_ensemble_model(
 )
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter banding code, case-insensitive
-(must match \code{^[A-Z]\{4\}$}; stored upper-case).}
+\item{alpha_code}{Character. Four-letter banding code,
+case-insensitive (validated as exactly four A-Z letters;
+stored upper-case).}
 
-\item{year}{Integer. A 5-year bin start in \{1980, ..., 2020\}
+\item{year}{Integer. A 5-year bin start in (1980, 2020)
 divisible by 5.}
 
-\item{methods}{Character. SDM algorithms to fit. Default
-\code{c("maxnet", "rf", "brt", "glm", "mars")}.}
+\item{methods}{Character. SDM algorithms to fit. Defaults to
+\code{c("maxnet","rf","brt","glm","mars")}.}
 
-\item{reps}{Integer. Number of replicated subsampling runs. Default 3.}
+\item{reps}{Integer. Number of replicated subsampling runs.
+Default \code{3}.}
 
-\item{bg}{Integer. Number of background points. Default 2500.}
+\item{bg}{Integer. Number of background points. Default
+\code{2500}.}
 
-\item{tp}{Numeric. Test partition percent (0--100). Default 40.}
+\item{tp}{Numeric. Test partition percent (0-100). Default
+\code{40}.}
 
-\item{op}{Integer. Threshold optimization option for
-\code{sdm::getEvaluation}; \code{2} = max(sensitivity + specificity).
-Default 2.}
+\item{op}{Integer. Threshold optimization option passed to
+\code{sdm::getEvaluation} for binarization; \code{2} =
+max(se+sp). Default \code{2}.}
 
-\item{ensemble_method}{Character. Ensemble combination method passed to
-\code{sdm::ensemble()}. Default \code{"unweighted"}.}
+\item{ensemble_method}{Character. Ensemble combination method
+passed to \code{sdm::ensemble} in
+\code{setting = list(method = ...)}. Default
+\code{"unweighted"}.}
 
-\item{io}{Character. Raster I/O backend for writing outputs; one of
-\code{"raster"} or \code{"terra"}. Default \code{"raster"}.}
+\item{io}{Character. Raster I/O backend for writing outputs;
+one of \code{"raster"} or \code{"terra"}. Predictors are read
+via raster either way to maintain sdm compatibility. Default
+\code{"raster"}.}
 
-\item{overwrite}{Logical. Overwrite existing output files. Default TRUE.}
+\item{overwrite}{Logical. Overwrite existing output files.
+Default \code{TRUE}.}
 
-\item{verbose}{Logical. Emit timestamped console progress. Default TRUE.}
+\item{verbose}{Logical. Emit timestamped console progress.
+Default \code{TRUE}.}
 }
 \value{
-Invisible list with elements:
+Invisibly returns a List with structured elements:
 \itemize{
-  \item \code{data}: sdmData object
-  \item \code{model}: sdmModel object
+  \item \code{data}: sdmData object containing training data
+  \item \code{model}: sdmModel object representing fitted models
   \item \code{ensemble}: RasterLayer of predicted suitability
   \item \code{range}: RasterLayer of binary presence/absence
-  \item \code{paths}: Named list of written file paths
-  \item \code{stats}: List with \code{ms} (model stats), \code{pi_raw},
-        \code{pi_ranked}
+  \item \code{paths}: List of important written file paths
+  \item \code{stats}: List of captured model statistics and
+  variable importance outputs
 }
-Side effects include writing raster outputs, statistics and variable
-importance files, plots, and a log entry appended to the run log.
+Side effects include writing raster outputs, statistics files,
+variable importance summaries, plots, and appending a log entry
+to the run log file.
 }
 \description{
-Constructs an ensemble ecological niche model (ENM) for a given species and
-5-year time bin using the \pkg{sdm} framework, producing ensemble prediction
-rasters, a binary range map, model statistics, and variable importance files.
+Constructs an ensemble ecological niche model (ENM) for a given
+species (four-letter banding code) and a 5-year time slice using
+the sdm framework, producing ensemble predictions and derived
+products including range maps and model diagnostics.
 }
 \details{
-Input paths follow the rENM run structure:
+This function is part of the rENM framework's processing pipeline
+and operates within the project directory structure defined by
+rENM_project_dir().
+
+\strong{Pipeline context}:
+Inputs/paths must follow the rENM run structure:
 \preformatted{
-<project_dir>/runs/<alpha_code>/TimeSeries/<year>/occs/of-<year>.csv
-<project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/*.asc
-<project_dir>/runs/<alpha_code>/TimeSeries/<year>/model/  (outputs)
+<rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/occs/of-<YEAR>.csv
+<rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/vars/*.asc
+<rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/model/   (outputs written here)
 }
 
-Models are trained via \code{sdm::sdm()} with replicated subsampling
-(\code{reps}) and a held-out test partition (\code{tp} percent). Background
-points are drawn with \code{method = "gRandom"}.
+\strong{Inputs}:
+The occurrence CSV must include \code{longitude}, \code{latitude}.
 
-The default ensemble uses \code{"maxnet"} (native R, no Java dependency).
-A binary range map is derived by thresholding at the mean evaluation
-threshold returned by \code{sdm::getEvaluation(opt = op)}.
+\strong{Methods}:
+Models are trained via \code{sdm::sdm()} with replicated subsampling
+(\code{reps}) and a test partition (\code{tp}, percent). Background
+points (\code{bg}) are drawn using \code{method = "gRandom"}.
+
+The default modeling ensemble uses \code{"maxnet"} (a native R
+implementation of maximum entropy modeling) instead of
+\code{"maxent"} to avoid Java dependencies and improve
+reproducibility in CRAN-compliant environments.
+
+\strong{Outputs}:
+\itemize{
+  \item Ensemble prediction rasters (GeoTIFF and ASCII)
+  \item Model statistics and variable importance summaries
+  \item Binary range map derived via threshold optimization
+}
+
+\strong{Logging}:
+A human-readable, append-only summary is written to:
+\code{<rENM_project_dir()>/runs/<alpha_code>/}
+\code{_log.txt}
+with key parameters, file outputs, and per-year status. Console
+messages include timestamps for traceability.
 }
 \examples{
 \dontrun{
+# Default knobs; raster I/O
 result <- create_ensemble_model("CASP", 2000)
 
+# Heavier replication, custom methods, terra I/O
 result <- create_ensemble_model(
   alpha_code = "CASP", year = 2000,
-  methods = c("maxnet", "glm", "brt", "rf", "mars"),
-  reps = 5, bg = 5000, tp = 30, io = "terra"
+  methods = c("maxnet","glm","brt","rf","mars"),
+  reps = 5, bg = 5000, tp = 30, op = 2,
+  ensemble_method = "unweighted",
+  io = "terra", overwrite = TRUE, verbose = TRUE
 )
 }
 
 }
 \seealso{
 \code{\link[sdm]{sdm}}, \code{\link[sdm]{sdmData}},
-  \code{\link[sdm]{ensemble}}, \code{\link[sdm]{getEvaluation}}
+\code{\link[sdm]{ensemble}}, \code{\link[sdm]{getEvaluation}}
 }

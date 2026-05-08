@@ -1,59 +1,92 @@
-#' Build an ensemble ENM for a species and time slice
+#' Build an ensemble ENM and derived products for a species
 #'
-#' Constructs an ensemble ecological niche model (ENM) for a given species and
-#' 5-year time bin using the \pkg{sdm} framework, producing ensemble prediction
-#' rasters, a binary range map, model statistics, and variable importance files.
+#' Constructs an ensemble ecological niche model (ENM) for a given
+#' species (four-letter banding code) and a 5-year time slice using
+#' the sdm framework, producing ensemble predictions and derived
+#' products including range maps and model diagnostics.
 #'
 #' @details
-#' Input paths follow the rENM run structure:
+#' This function is part of the rENM framework's processing pipeline
+#' and operates within the project directory structure defined by
+#' rENM_project_dir().
+#'
+#' \strong{Pipeline context}:
+#' Inputs/paths must follow the rENM run structure:
 #' \preformatted{
-#' <project_dir>/runs/<alpha_code>/TimeSeries/<year>/occs/of-<year>.csv
-#' <project_dir>/runs/<alpha_code>/TimeSeries/<year>/vars/*.asc
-#' <project_dir>/runs/<alpha_code>/TimeSeries/<year>/model/  (outputs)
+#' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/occs/of-<YEAR>.csv
+#' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/vars/*.asc
+#' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/model/   (outputs written here)
 #' }
 #'
+#' \strong{Inputs}:
+#' The occurrence CSV must include \code{longitude}, \code{latitude}.
+#'
+#' \strong{Methods}:
 #' Models are trained via \code{sdm::sdm()} with replicated subsampling
-#' (\code{reps}) and a held-out test partition (\code{tp} percent). Background
-#' points are drawn with \code{method = "gRandom"}.
+#' (\code{reps}) and a test partition (\code{tp}, percent). Background
+#' points (\code{bg}) are drawn using \code{method = "gRandom"}.
 #'
-#' The default ensemble uses \code{"maxnet"} (native R, no Java dependency).
-#' A binary range map is derived by thresholding at the mean evaluation
-#' threshold returned by \code{sdm::getEvaluation(opt = op)}.
+#' The default modeling ensemble uses \code{"maxnet"} (a native R
+#' implementation of maximum entropy modeling) instead of
+#' \code{"maxent"} to avoid Java dependencies and improve
+#' reproducibility in CRAN-compliant environments.
 #'
-#' @param alpha_code Character. Four-letter banding code, case-insensitive
-#'   (must match \code{^[A-Z]\{4\}$}; stored upper-case).
-#' @param year Integer. A 5-year bin start in \{1980, ..., 2020\}
-#'   divisible by 5.
-#' @param methods Character. SDM algorithms to fit. Default
-#'   \code{c("maxnet", "rf", "brt", "glm", "mars")}.
-#' @param reps Integer. Number of replicated subsampling runs. Default 3.
-#' @param bg Integer. Number of background points. Default 2500.
-#' @param tp Numeric. Test partition percent (0--100). Default 40.
-#' @param op Integer. Threshold optimization option for
-#'   \code{sdm::getEvaluation}; \code{2} = max(sensitivity + specificity).
-#'   Default 2.
-#' @param ensemble_method Character. Ensemble combination method passed to
-#'   \code{sdm::ensemble()}. Default \code{"unweighted"}.
-#' @param io Character. Raster I/O backend for writing outputs; one of
-#'   \code{"raster"} or \code{"terra"}. Default \code{"raster"}.
-#' @param overwrite Logical. Overwrite existing output files. Default TRUE.
-#' @param verbose Logical. Emit timestamped console progress. Default TRUE.
-#'
-#' @return Invisible list with elements:
+#' \strong{Outputs}:
 #' \itemize{
-#'   \item \code{data}: sdmData object
-#'   \item \code{model}: sdmModel object
+#'   \item Ensemble prediction rasters (GeoTIFF and ASCII)
+#'   \item Model statistics and variable importance summaries
+#'   \item Binary range map derived via threshold optimization
+#' }
+#'
+#' \strong{Logging}:
+#' A human-readable, append-only summary is written to:
+#' \code{<rENM_project_dir()>/runs/<alpha_code>/}
+#' \code{_log.txt}
+#' with key parameters, file outputs, and per-year status. Console
+#' messages include timestamps for traceability.
+#'
+#' @param alpha_code Character. Four-letter banding code,
+#' case-insensitive (validated as exactly four A-Z letters;
+#' stored upper-case).
+#' @param year Integer. A 5-year bin start in (1980, 2020)
+#' divisible by 5.
+#' @param methods Character. SDM algorithms to fit. Defaults to
+#' \code{c("maxnet","rf","brt","glm","mars")}.
+#' @param reps Integer. Number of replicated subsampling runs.
+#' Default \code{3}.
+#' @param bg Integer. Number of background points. Default
+#' \code{2500}.
+#' @param tp Numeric. Test partition percent (0-100). Default
+#' \code{40}.
+#' @param op Integer. Threshold optimization option passed to
+#' \code{sdm::getEvaluation} for binarization; \code{2} =
+#' max(se+sp). Default \code{2}.
+#' @param ensemble_method Character. Ensemble combination method
+#' passed to \code{sdm::ensemble} in
+#' \code{setting = list(method = ...)}. Default
+#' \code{"unweighted"}.
+#' @param io Character. Raster I/O backend for writing outputs;
+#' one of \code{"raster"} or \code{"terra"}. Predictors are read
+#' via raster either way to maintain sdm compatibility. Default
+#' \code{"raster"}.
+#' @param overwrite Logical. Overwrite existing output files.
+#' Default \code{TRUE}.
+#' @param verbose Logical. Emit timestamped console progress.
+#' Default \code{TRUE}.
+#'
+#' @return Invisibly returns a List with structured elements:
+#' \itemize{
+#'   \item \code{data}: sdmData object containing training data
+#'   \item \code{model}: sdmModel object representing fitted models
 #'   \item \code{ensemble}: RasterLayer of predicted suitability
 #'   \item \code{range}: RasterLayer of binary presence/absence
-#'   \item \code{paths}: Named list of written file paths
-#'   \item \code{stats}: List with \code{ms} (model stats), \code{pi_raw},
-#'         \code{pi_ranked}
+#'   \item \code{paths}: List of important written file paths
+#'   \item \code{stats}: List of captured model statistics and
+#'   variable importance outputs
 #' }
-#' Side effects include writing raster outputs, statistics and variable
-#' importance files, plots, and a log entry appended to the run log.
-#'
-#' @seealso \code{\link[sdm]{sdm}}, \code{\link[sdm]{sdmData}},
-#'   \code{\link[sdm]{ensemble}}, \code{\link[sdm]{getEvaluation}}
+#' Side effects include writing raster outputs, statistics files,
+#' variable importance summaries, plots, and appending a log entry
+#' to the run log file.
 #'
 #' @importFrom utils read.csv write.table capture.output
 #' @importFrom raster stack writeRaster nlayers values raster
@@ -62,14 +95,21 @@
 #'
 #' @examples
 #' \dontrun{
+#' # Default knobs; raster I/O
 #' result <- create_ensemble_model("CASP", 2000)
 #'
+#' # Heavier replication, custom methods, terra I/O
 #' result <- create_ensemble_model(
 #'   alpha_code = "CASP", year = 2000,
-#'   methods = c("maxnet", "glm", "brt", "rf", "mars"),
-#'   reps = 5, bg = 5000, tp = 30, io = "terra"
+#'   methods = c("maxnet","glm","brt","rf","mars"),
+#'   reps = 5, bg = 5000, tp = 30, op = 2,
+#'   ensemble_method = "unweighted",
+#'   io = "terra", overwrite = TRUE, verbose = TRUE
 #' )
 #' }
+#'
+#' @seealso \code{\link[sdm]{sdm}}, \code{\link[sdm]{sdmData}},
+#' \code{\link[sdm]{ensemble}}, \code{\link[sdm]{getEvaluation}}
 #'
 #' @export
 create_ensemble_model <- function(
@@ -93,13 +133,11 @@ create_ensemble_model <- function(
   ensure_dir <- function(path) if (!dir.exists(path)) {
     dir.create(path, recursive = TRUE, showWarnings = FALSE)
   }
-
-  # Validate required packages without library() calls
-  req_pkgs <- c("sdm", "raster", "terra", "sp", "Hmisc", "dismo", "maxnet")
-  missing_pkgs <- req_pkgs[!vapply(req_pkgs, requireNamespace, logical(1), quietly = TRUE)]
-  if (length(missing_pkgs)) {
-    stop("Required package(s) not installed: ",
-         paste(missing_pkgs, collapse = ", "), call. = FALSE)
+  must_have_pkg <- function(p) {
+    if (!requireNamespace(p, quietly = TRUE)) {
+      stop(sprintf("Required package '%s' is not installed.", p))
+    }
+    suppressPackageStartupMessages(library(p, character.only = TRUE))
   }
 
   if (!is.character(alpha_code) || length(alpha_code) != 1) {
@@ -129,6 +167,8 @@ create_ensemble_model <- function(
   log_fn    <- file.path(base_dir, "_log.txt")
 
   say("Starting create_ensemble_model for ", alpha_code, " / ", year, " ...")
+
+  invisible(lapply(c("sdm", "raster", "terra", "sp", "Hmisc", "dismo", "maxnet"), must_have_pkg))
 
   if (!file.exists(occs_fn)) {
     stop(sprintf("Occurrences file not found: %s", occs_fn))
@@ -202,7 +242,8 @@ create_ensemble_model <- function(
   ms  <- utils::capture.output(print(m))
   pi0 <- utils::capture.output(print(sdm::getVarImp(m)))
 
-  pi1 <- rank_variable_importance(pi0, combine_metrics = TRUE)
+  rvi_fun <- get("rank_variable_importance", mode = "function")
+  pi1     <- rvi_fun(pi0, combine_metrics = TRUE)
 
   stats_txt   <- file.path(model_dir, sprintf("%s-%d-Stats.txt",      alpha_code, year))
   pi_graph_fn <- file.path(model_dir, sprintf("%s-%d-PI-Graphed.txt", alpha_code, year))
@@ -215,11 +256,14 @@ create_ensemble_model <- function(
 
   say("Plotting climatic suitability map ...")
   title1 <- sprintf("%s Climatic Suitability (%d)", alpha_code, year)
-  p1     <- plot_suitability(en, alpha_code, title = title1)
+
+  ps_fun <- get("plot_suitability", mode = "function")
+  p1     <- ps_fun(en, alpha_code, title = title1)
   utils::capture.output(print(p1))
 
+  ssp_fun     <- get("save_suitability_plot", mode = "function")
   save_prefix <- file.path(model_dir, sprintf("%s-%d-Prediction", alpha_code, year))
-  save_suitability_plot(p1, save_prefix)
+  ssp_fun(p1, save_prefix)
 
   say("Deriving binary range map using threshold op=", op, " ...")
   ev <- sdm::getEvaluation(m, stat = c("threshold"), opt = op)
@@ -229,7 +273,9 @@ create_ensemble_model <- function(
     1, 0
   )
   title2 <- sprintf("%s Range (%d)", alpha_code, year)
-  p2     <- create_range_map(pa, alpha_code, year = year, title = title2)
+
+  crm_fun <- get("create_range_map", mode = "function")
+  p2      <- crm_fun(pa, alpha_code, year = year, title = title2)
   utils::capture.output(print(p2))
 
   n_pres <- tryCatch(nrow(as.data.frame(sp_df)), error = function(e) NA_integer_)
