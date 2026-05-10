@@ -141,7 +141,11 @@ stage_occurrences <- function(alpha_code,
   )
 
   ## ---- write log ------------------------------------------------------------
-  cat(paste(c(yearly_block, summary_block, ""), collapse = "\n"),
+
+  # cat(paste(c(yearly_block, summary_block, ""), collapse = "\n"),
+  #     file = log_file, append = TRUE)
+
+  cat(paste(c(summary_block, ""), collapse = "\n"),
       file = log_file, append = TRUE)
 
   ## ---- console echo ---------------------------------------------------------

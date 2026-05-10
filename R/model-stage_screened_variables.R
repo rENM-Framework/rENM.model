@@ -245,7 +245,8 @@ stage_screened_variables <- function(alpha_code,
     sprintf("%-20s %d\n", "Missing files:", missing_files),
     sprintf("%-20s %d\n", "Years missing ranking:", years_missing_ranking),
     sprintf("%-20s %s\n", "Outputs saved:", outputs_saved_block),
-    sprintf("%-20s %s seconds\n", "Total elapsed:", elapsed)
+    sprintf("%-20s %s seconds\n", "Total elapsed:", elapsed),
+    "\n", "", "\n"
   )
 
   cat(summary_text, file = log_file, append = TRUE)
