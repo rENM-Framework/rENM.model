@@ -14,12 +14,12 @@ resolved via \code{\link{rENM_project_dir}}.}
 }
 \value{
 Invisible named list keyed by year. Each element contains:
-  \code{ok} (logical), \code{year} (integer), \code{elapsed} (seconds),
-  \code{result} (output from \code{create_ensemble_model()} or NULL),
-  \code{notes} (character: \code{"ok"} or an error message).
-  The attribute \code{total_elapsed_sec} records total wall-clock time.
-  Side effects are parallel job execution, file outputs per year, and a
-  summary log entry.
+\code{ok} (logical), \code{year} (integer), \code{elapsed} (seconds),
+\code{result} (output from \code{create_ensemble_model()} or NULL),
+\code{notes} (character: \code{"ok"} or an error message).
+The attribute \code{total_elapsed_sec} records total wall-clock time.
+Side effects are parallel job execution, file outputs per year, and a
+summary log entry.
 }
 \description{
 Schedules and executes \code{\link{create_ensemble_model}} for each 5-year

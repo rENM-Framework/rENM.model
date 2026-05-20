@@ -52,8 +52,8 @@ Default 2L.}
 }
 \value{
 Invisible list with \code{plot} (ggplot2 object), \code{img_path},
-  \code{asc_path}, \code{tif_path}. Side effects are raster and image files
-  written to disk and sidecar files removed.
+\code{asc_path}, \code{tif_path}. Side effects are raster and image files
+written to disk and sidecar files removed.
 }
 \description{
 Build a ggplot2 map for a binary (0/1) presence-absence raster, overlaid

@@ -61,13 +61,13 @@ Default \code{TRUE}.}
 \value{
 Invisibly returns a List with structured elements:
 \itemize{
-  \item \code{data}: sdmData object containing training data
-  \item \code{model}: sdmModel object representing fitted models
-  \item \code{ensemble}: RasterLayer of predicted suitability
-  \item \code{range}: RasterLayer of binary presence/absence
-  \item \code{paths}: List of important written file paths
-  \item \code{stats}: List of captured model statistics and
-  variable importance outputs
+\item \code{data}: sdmData object containing training data
+\item \code{model}: sdmModel object representing fitted models
+\item \code{ensemble}: RasterLayer of predicted suitability
+\item \code{range}: RasterLayer of binary presence/absence
+\item \code{paths}: List of important written file paths
+\item \code{stats}: List of captured model statistics and
+variable importance outputs
 }
 Side effects include writing raster outputs, statistics files,
 variable importance summaries, plots, and appending a log entry
@@ -107,9 +107,9 @@ reproducibility in CRAN-compliant environments.
 
 \strong{Outputs}:
 \itemize{
-  \item Ensemble prediction rasters (GeoTIFF and ASCII)
-  \item Model statistics and variable importance summaries
-  \item Binary range map derived via threshold optimization
+\item Ensemble prediction rasters (GeoTIFF and ASCII)
+\item Model statistics and variable importance summaries
+\item Binary range map derived via threshold optimization
 }
 
 \strong{Logging}:

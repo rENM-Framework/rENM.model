@@ -26,8 +26,8 @@ the default log path when \code{log_path} is not supplied.}
 }
 \value{
 Data frame with columns \code{variable} and \code{percent}
-  (combined) or additionally \code{metric} (uncombined), sorted by
-  descending importance.
+(combined) or additionally \code{metric} (uncombined), sorted by
+descending importance.
 }
 \description{
 Parse a "Relative Variable Importance" style text report and return a tidy
@@ -45,9 +45,9 @@ The parser expects one or more metric sections of the form:
 
 \strong{Input forms:}
 \itemize{
-  \item A path to a readable file (read line-by-line).
-  \item A single character string (split on \code{\\n}).
-  \item A character vector (treated as pre-split lines).
+\item A path to a readable file (read line-by-line).
+\item A single character string (split on \code{\\n}).
+\item A character vector (treated as pre-split lines).
 }
 
 Variable names may include letters, digits, underscores, hyphens, and dots.

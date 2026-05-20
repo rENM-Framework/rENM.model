@@ -17,12 +17,12 @@ resolved via \code{\link{rENM_project_dir}}.}
 }
 \value{
 Invisible list with elements:
-  \code{alpha_code}, \code{years}, \code{copied_paths},
-  \code{counts} (list: \code{total_years}, \code{valid_files},
-  \code{copied_files}, \code{missing_files}),
-  \code{elapsed_seconds}, \code{log_file}.
-  Primary side effects are file copies, directory creation, and a log
-  entry appended to \code{_log.txt}.
+\code{alpha_code}, \code{years}, \code{copied_paths},
+\code{counts} (list: \code{total_years}, \code{valid_files},
+\code{copied_files}, \code{missing_files}),
+\code{elapsed_seconds}, \code{log_file}.
+Primary side effects are file copies, directory creation, and a log
+entry appended to \code{_log.txt}.
 }
 \description{
 Copies per-bin occurrence files from the run-level \code{_occs} directory

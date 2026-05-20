@@ -2,17 +2,18 @@ Package: rENM.model
 Type: Package
 Title: Modeling tools for the rENM framework
 Version: 0.1.0.9000
-Author: John L. Schnase
-Maintainer: John L. Schnase <rENM.Framework@gmail.com>
-ORCID: 0000-0001-7473-3977
-Description: The rENM framework is a modular system for
-    reconstructing and analyzing long-term ecological niche
-    dynamics using time-indexed environmental data and species
-    occurrence records. Its packages support climate-based
-    niche modeling, temporal analysis of climatic suitability,
-    and reproducible workflows for studying ecological change.
+Authors@R: person(given = "John L.", family = "Schnase",
+    email = "rENM.Framework@gmail.com",
+    role = c("aut", "cre"),
+    comment = c(ORCID = "0000-0001-7473-3977"))
+Description: Provides ecological niche modeling tools for the rENM
+    framework, including occurrence and variable staging, stochastic
+    covariance screening, ensemble model construction, and time-series
+    assembly across five-year bins using the sdm modeling framework.
+Depends: R (>= 4.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 URL: https://github.com/rENM-Framework/rENM.model
 BugReports: https://github.com/rENM-Framework/rENM.model/issues

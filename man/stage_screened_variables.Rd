@@ -25,14 +25,14 @@ year; NULL copies all variables. Default 10.}
 }
 \value{
 Invisible named list with elements:
-  \code{alpha_code}, \code{years}, \code{rank_method}, \code{top_n},
-  \code{copied_paths},
-  \code{counts} (list: \code{total_years}, \code{attempted_files},
-  \code{copied_files}, \code{missing_files},
-  \code{years_missing_ranking}),
-  \code{elapsed_seconds}, \code{log_file}.
-  Primary side effects are file copies, directory creation, and a log
-  entry appended to \code{_log.txt}.
+\code{alpha_code}, \code{years}, \code{rank_method}, \code{top_n},
+\code{copied_paths},
+\code{counts} (list: \code{total_years}, \code{attempted_files},
+\code{copied_files}, \code{missing_files},
+\code{years_missing_ranking}),
+\code{elapsed_seconds}, \code{log_file}.
+Primary side effects are file copies, directory creation, and a log
+entry appended to \code{_log.txt}.
 }
 \description{
 Copies ranked raster predictor layers into per-year
@@ -51,10 +51,10 @@ A processing summary is appended to the run log.
 
 Supported \code{rank_method} values and the corresponding ranking column:
 \itemize{
-  \item \code{"ratio"} -- \code{rank_ratio} (default)
-  \item \code{"ranksum"} -- \code{rank_ranksum}
-  \item \code{"medianPI"} -- \code{rank_medianPI}
-  \item \code{"wz"} -- \code{rank_wz}
+\item \code{"ratio"} -- \code{rank_ratio} (default)
+\item \code{"ranksum"} -- \code{rank_ranksum}
+\item \code{"medianPI"} -- \code{rank_medianPI}
+\item \code{"wz"} -- \code{rank_wz}
 }
 }
 \examples{
@@ -66,6 +66,6 @@ Supported \code{rank_method} values and the corresponding ranking column:
 }
 \seealso{
 \code{\link{screen_by_convergence1}},
-  \code{\link{screen_by_convergence2}},
-  \code{\link{rENM_project_dir}}
+\code{\link{screen_by_convergence2}},
+\code{\link{rENM_project_dir}}
 }

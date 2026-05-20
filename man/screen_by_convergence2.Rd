@@ -51,12 +51,12 @@ convergence; NULL defaults to 1 in fast mode, else 2.}
 \value{
 Invisible list with elements:
 \describe{
-  \item{\code{importance_summary}}{Data frame of variable-wise PI statistics
-        and rank diagnostics.}
-  \item{\code{convergence_trace}}{Data frame with per-iteration diagnostics.}
-  \item{\code{output_files}}{Named list with paths to the ranking and
-        convergence-trace CSV files.}
-  \item{\code{seed_used}}{Integer seed used in this run.}
+\item{\code{importance_summary}}{Data frame of variable-wise PI statistics
+and rank diagnostics.}
+\item{\code{convergence_trace}}{Data frame with per-iteration diagnostics.}
+\item{\code{output_files}}{Named list with paths to the ranking and
+convergence-trace CSV files.}
+\item{\code{seed_used}}{Integer seed used in this run.}
 }
 Side effects: two CSV files and a log block are written to disk.
 }
@@ -82,11 +82,11 @@ within each bivariate model.
 
 \strong{Convergence criteria} (both must pass):
 \itemize{
-  \item \emph{Mean stability} -- relative change in top-k mean PI below an
-        adaptive threshold (10\% if \eqn{p \le 20},
-        7.5\% if \eqn{21 \le p \le 40}, else 5\%).
-  \item \emph{Membership stability} -- Jaccard overlap of consecutive
-        top-k sets above \code{set_threshold}.
+\item \emph{Mean stability} -- relative change in top-k mean PI below an
+adaptive threshold (10\\% if \eqn{p \le 20},
+7.5\\% if \eqn{21 \le p \le 40}, else 5\\%).
+\item \emph{Membership stability} -- Jaccard overlap of consecutive
+top-k sets above \code{set_threshold}.
 }
 Adaptive top-k: \eqn{k = \min(12, \max(5, \mathrm{round}(\sqrt{p})))}.
 Batch sampling defaults to \code{max(1, floor(1.5 * sqrt(p)))} appearances

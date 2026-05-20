@@ -49,7 +49,7 @@ Default 15.}
 }
 \value{
 Invisibly returns the file path written. Side effect: writes an
-  image file to disk.
+image file to disk.
 }
 \description{
 Save a ggplot object to disk with configurable dimensions, resolution, and

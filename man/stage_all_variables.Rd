@@ -21,9 +21,9 @@ resolved via \code{\link{rENM_project_dir}}.}
 }
 \value{
 Invisible data frame with columns \code{year}, \code{src_dir},
-  \code{dest_dir}, \code{files_found}, \code{files_copied},
-  \code{duplicates}. Primary side effects are file copies, directory
-  creation, and a log entry appended to \code{_log.txt}.
+\code{dest_dir}, \code{files_found}, \code{files_copied},
+\code{duplicates}. Primary side effects are file copies, directory
+creation, and a log entry appended to \code{_log.txt}.
 }
 \description{
 Copies raster variables (\code{.tif}, \code{.asc}) from the run-level

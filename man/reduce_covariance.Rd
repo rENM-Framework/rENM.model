@@ -47,8 +47,8 @@ default TRUE.}
 }
 \value{
 Invisible named list keyed by year. Each element contains:
-  \code{kept}, \code{dropped}, \code{vif_table}, \code{cor_pairs},
-  \code{results_csv}, \code{moved_to} (directory path or NA).
+\code{kept}, \code{dropped}, \code{vif_table}, \code{cor_pairs},
+\code{results_csv}, \code{moved_to} (directory path or NA).
 }
 \description{
 Detects multicollinearity in staged predictor rasters through an adaptive
@@ -64,10 +64,10 @@ The function samples \code{sample_schedule} sizes in order, running
 
 Outputs per year:
 \itemize{
-  \item Results CSV: \code{_<alpha_code>-<year>-Correlation-Results.csv}
-  \item Moved rasters (only when variables are dropped):
-        \code{_<alpha_code>-<year>-Correlated-Variables/}
-  \item Log entry appended to \code{_log.txt}
+\item Results CSV: \code{_<alpha_code>-<year>-Correlation-Results.csv}
+\item Moved rasters (only when variables are dropped):
+\code{_<alpha_code>-<year>-Correlated-Variables/}
+\item Log entry appended to \code{_log.txt}
 }
 }
 \examples{
