@@ -31,5 +31,9 @@ Imports:
     sp,
     terra,
     usdm
+Suggests:
+    randomForest,
+    gbm,
+    earth
 Config/roxygen2/version: 8.0.0
 

@@ -168,7 +168,8 @@ create_ensemble_model <- function(
 
   say("Starting create_ensemble_model for ", alpha_code, " / ", year, " ...")
 
-  invisible(lapply(c("sdm", "raster", "terra", "sp", "dismo", "maxnet"), must_have_pkg))
+  invisible(lapply(c("sdm", "raster", "terra", "sp", "dismo", "maxnet",
+                     "randomForest", "gbm", "earth"), must_have_pkg))
 
   if (!file.exists(occs_fn)) {
     stop(sprintf("Occurrences file not found: %s", occs_fn))
