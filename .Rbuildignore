@@ -3,3 +3,5 @@
 ^LICENSE\.md$
 ^\.positai$
 ^\.claude$
+^Rplots\.pdf$
+^\.Rhistory$

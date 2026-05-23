@@ -108,28 +108,27 @@ create_timeseries <- function(alpha_code, project_dir = NULL) {
 
     t0 <- proc.time()[["elapsed"]]
 
-    out <- tryCatch({
-
-      res <- cem_fn(alpha_code, yr)
-
-      list(
-        ok      = TRUE,
-        year    = yr,
-        elapsed = proc.time()[["elapsed"]] - t0,
-        result  = res,
-        notes   = "ok"
-      )
-
-    }, error = function(e) {
-
-      list(
-        ok      = FALSE,
-        year    = yr,
-        elapsed = proc.time()[["elapsed"]] - t0,
-        result  = NULL,
-        notes   = conditionMessage(e)
-      )
-    })
+    out <- tryCatch(
+      {
+        res <- cem_fn(alpha_code, yr)
+        list(
+          ok      = TRUE,
+          year    = yr,
+          elapsed = proc.time()[["elapsed"]] - t0,
+          result  = res,
+          notes   = "ok"
+        )
+      },
+      error = function(e) {
+        list(
+          ok      = FALSE,
+          year    = yr,
+          elapsed = proc.time()[["elapsed"]] - t0,
+          result  = NULL,
+          notes   = conditionMessage(e)
+        )
+      }
+    )
 
     out
   }

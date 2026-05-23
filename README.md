@@ -1,9 +1,6 @@
----
+------------------------------------------------------------------------
 
-editor_options: 
-  markdown: 
-    wrap: 72
----
+editor_options: markdown: wrap: 72 ---
 
 # rENM.model
 
@@ -20,7 +17,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 ## Key functions
 
 | Function | Description |
-|------------------------------------|------------------------------------|
+|----|----|
 | `stage_occurrences()` | Copy occurrence CSVs into TimeSeries bins |
 | `stage_all_variables()` | Copy predictor rasters into TimeSeries bins |
 | `screen_by_convergence1()` | Convergence-based variable screening via dismo MaxEnt (requires Java) |

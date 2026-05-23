@@ -1,7 +1,7 @@
 Package: rENM.model
 Type: Package
 Title: Modeling tools for the rENM Framework
-Version: 0.1.0.9000
+Version: 0.1.1.9000
 Authors@R: person(given = "John L.", family = "Schnase",
     email = "rENM.Framework@gmail.com",
     role = c("aut", "cre"),
@@ -19,6 +19,7 @@ BugReports: https://github.com/rENM-Framework/rENM.model/issues
 Imports:
     rENM.core,
     dismo,
+    methods,
     doParallel,
     dplyr,
     foreach,

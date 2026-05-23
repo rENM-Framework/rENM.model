@@ -88,6 +88,7 @@
 #' variable importance summaries, plots, and appending a log entry
 #' to the run log file.
 #'
+#' @importFrom methods getMethod signature setMethod
 #' @importFrom utils read.csv write.table capture.output
 #' @importFrom raster stack writeRaster nlayers values raster
 #' @importFrom sdm sdm sdmData ensemble getVarImp getEvaluation
@@ -170,6 +171,40 @@ create_ensemble_model <- function(
 
   invisible(lapply(c("sdm", "raster", "terra", "sp", "dismo", "maxnet",
                      "randomForest", "gbm", "earth"), must_have_pkg))
+
+  # Patch raster::writeValues (RasterLayer/vector method) for R 4.6.0 compatibility.
+  # Must be applied here so it runs inside each PSOCK worker spawned by
+  # create_timeseries(); workers load raster via library() and never trigger
+  # any rENM.model .onLoad hook.
+  #
+  # The bug (confirmed via worker traceback):
+  #   opsci = options("scipen")   # options("scipen") returns list(scipen=0), not a scalar
+  #   ...
+  #   options(scipen = opsci)     # options(scipen = list(scipen=0)) -> ERROR in R 4.6.0
+  #
+  # R 4.6.0 NEWS: "options(scipen = NULL) and other invalid values now signal
+  # an error instead of invalidating ops relying on a finite integer value."
+  # The fix replaces options("scipen") with getOption("scipen") so opsci
+  # captures a scalar and the final restore call is valid.
+  local({
+    fn <- tryCatch(
+      getMethod("writeValues", signature("RasterLayer", "vector")),
+      error = function(e) NULL
+    )
+    if (is.function(fn)) {
+      b      <- deparse(body(fn))
+      broken <- 'opsci = options("scipen")'
+      if (any(grepl(broken, b, fixed = TRUE))) {
+        fixed    <- 'opsci = getOption("scipen")'
+        body(fn) <- parse(text = paste(gsub(broken, fixed, b, fixed = TRUE),
+                                       collapse = "\n"))[[1L]]
+        methods::setMethod("writeValues",
+                           signature("RasterLayer", "vector"),
+                           fn,
+                           where = globalenv())
+      }
+    }
+  })
 
   if (!file.exists(occs_fn)) {
     stop(sprintf("Occurrences file not found: %s", occs_fn))
