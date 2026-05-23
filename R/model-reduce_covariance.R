@@ -43,7 +43,7 @@
 #'   \code{kept}, \code{dropped}, \code{vif_table}, \code{cor_pairs},
 #'   \code{results_csv}, \code{moved_to} (directory path or NA).
 #'
-#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_screened_variables}}
+#' @seealso \code{\link{stage_screened_variables}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @importFrom raster stack nlayers sampleRandom
 #' @importFrom stats complete.cases na.omit cor
 #' @importFrom tools file_path_sans_ext

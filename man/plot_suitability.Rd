@@ -57,5 +57,5 @@ NA raster cells render transparent.
 
 }
 \seealso{
-\code{\link{save_suitability_plot}}, \code{\link{rENM_project_dir}}
+\code{\link{save_suitability_plot}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

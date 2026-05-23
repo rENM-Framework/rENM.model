@@ -10,7 +10,7 @@ create_timeseries(alpha_code, project_dir = NULL)
 \item{alpha_code}{Character. Four-letter banding code (e.g., \code{"CASP"}).}
 
 \item{project_dir}{Character. Path to the rENM project root. If NULL,
-resolved via \code{\link{rENM_project_dir}}.}
+resolved via \code{\link[rENM.core]{rENM_project_dir}}.}
 }
 \value{
 Invisible named list keyed by year. Each element contains:
@@ -47,5 +47,5 @@ A processing summary is appended to
 
 }
 \seealso{
-\code{\link{create_ensemble_model}}, \code{\link{rENM_project_dir}}
+\code{\link{create_ensemble_model}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

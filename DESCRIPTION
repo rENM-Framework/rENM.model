@@ -1,13 +1,13 @@
 Package: rENM.model
 Type: Package
-Title: Modeling tools for the rENM framework
+Title: Modeling tools for the rENM Framework
 Version: 0.1.0.9000
 Authors@R: person(given = "John L.", family = "Schnase",
     email = "rENM.Framework@gmail.com",
     role = c("aut", "cre"),
     comment = c(ORCID = "0000-0001-7473-3977"))
 Description: Provides ecological niche modeling tools for the rENM
-    framework, including occurrence and variable staging, stochastic
+    Framework, including occurrence and variable staging, stochastic
     covariance screening, ensemble model construction, and time-series
     assembly across five-year bins using the sdm modeling framework.
 Depends: R (>= 4.1.0)
@@ -32,3 +32,4 @@ Imports:
     terra,
     usdm
 Config/roxygen2/version: 8.0.0
+

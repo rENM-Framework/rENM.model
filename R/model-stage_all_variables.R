@@ -14,14 +14,14 @@
 #' @param year Integer. Vector of 5-year bins. Default:
 #'   \code{seq(1980, 2020, by = 5)}.
 #' @param project_dir Character. Path to the rENM project root. If NULL,
-#'   resolved via \code{\link{rENM_project_dir}}.
+#'   resolved via \code{\link[rENM.core]{rENM_project_dir}}.
 #'
 #' @return Invisible data frame with columns \code{year}, \code{src_dir},
 #'   \code{dest_dir}, \code{files_found}, \code{files_copied},
 #'   \code{duplicates}. Primary side effects are file copies, directory
 #'   creation, and a log entry appended to \code{_log.txt}.
 #'
-#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_occurrences}}
+#' @seealso \code{\link{stage_occurrences}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @examples
 #' \dontrun{
 #'   stage_all_variables("CASP")

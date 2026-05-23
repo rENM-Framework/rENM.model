@@ -58,7 +58,7 @@
 #' }
 #' Side effects: two CSV files and a log block are written to disk.
 #'
-#' @seealso \code{\link{screen_by_convergence2}}, \code{\link{rENM_project_dir}}
+#' @seealso \code{\link{screen_by_convergence2}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @examples
 #' \dontrun{
 #' ## Quick triage across all years

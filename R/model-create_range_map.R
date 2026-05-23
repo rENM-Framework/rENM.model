@@ -38,7 +38,7 @@
 #'   \code{asc_path}, \code{tif_path}. Side effects are raster and image files
 #'   written to disk and sidecar files removed.
 #'
-#' @seealso \code{\link{plot_suitability}}, \code{\link{rENM_project_dir}}
+#' @seealso \code{\link{plot_suitability}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @importFrom terra rast vect crs same.crs project ext nlyr writeRaster as.data.frame
 #' @importFrom sf st_as_sf st_crs
 #' @importFrom ggplot2 ggplot geom_raster aes_string scale_fill_manual geom_sf labs

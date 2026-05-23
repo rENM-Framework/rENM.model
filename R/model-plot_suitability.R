@@ -26,7 +26,7 @@
 #'
 #' @return A ggplot2 object. No files are written.
 #'
-#' @seealso \code{\link{save_suitability_plot}}, \code{\link{rENM_project_dir}}
+#' @seealso \code{\link{save_suitability_plot}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @importFrom terra rast vect crs same.crs project ext nlyr as.data.frame
 #' @importFrom sf st_as_sf st_crs
 #' @importFrom ggplot2 ggplot geom_raster aes scale_fill_gradientn geom_sf labs

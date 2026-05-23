@@ -67,5 +67,5 @@ Supported \code{rank_method} values and the corresponding ranking column:
 \seealso{
 \code{\link{screen_by_convergence1}},
 \code{\link{screen_by_convergence2}},
-\code{\link{rENM_project_dir}}
+\code{\link[rENM.core]{rENM_project_dir}}
 }

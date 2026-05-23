@@ -1,25 +1,26 @@
+---
+
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
 # rENM.model
 
-![rENM](https://img.shields.io/badge/rENM-framework-blue)
-![module](https://img.shields.io/badge/module-model-informational)
+![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-model-informational)
 
 **Modeling and reconstruction engine for the rENM Framework**
 
 ## Overview
 
-`rENM.model` implements the core ecological niche modeling and historical
-reconstruction workflows within the rENM Framework. It transforms standardized
-occurrence and environmental data into time-resolved estimates of climatic
-suitability.
+`rENM.model` implements the core ecological niche modeling and historical reconstruction workflows within the rENM Framework. It transforms standardized occurrence and environmental data into time-resolved estimates of climatic suitability.
 
-This package depends on `rENM.core` for project-directory resolution and
-species metadata access. All functions accept an optional `project_dir`
-argument; see `?rENM_project_dir` for configuration options.
+This package depends on `rENM.core` for project-directory resolution and species metadata access. All functions accept an optional `project_dir` argument; see `?rENM_project_dir` for configuration options.
 
 ## Key functions
 
 | Function | Description |
-|---|---|
+|------------------------------------|------------------------------------|
 | `stage_occurrences()` | Copy occurrence CSVs into TimeSeries bins |
 | `stage_all_variables()` | Copy predictor rasters into TimeSeries bins |
 | `screen_by_convergence1()` | Convergence-based variable screening via dismo MaxEnt (requires Java) |
@@ -35,7 +36,7 @@ argument; see `?rENM_project_dir` for configuration options.
 
 ## Installation
 
-```r
+``` r
 # From GitHub
 devtools::install_github("rENM-Framework/rENM.model")
 
@@ -45,10 +46,9 @@ devtools::install_local("rENM.model")
 
 ## Getting started
 
-Set up a project directory and preprocess occurrence and predictor data first
-(see `rENM.data`), then run the modeling pipeline in order:
+Set up a project directory and preprocess occurrence and predictor data first (see `rENM.data`), then run the modeling pipeline in order:
 
-```r
+``` r
 library(rENM.model)
 
 proj <- "/path/to/your/rENM/project"
@@ -69,10 +69,9 @@ create_ensemble_model("CASP", year = 2000, project_dir = proj)
 create_timeseries("CASP", project_dir = proj)
 ```
 
-For interactive work, configure the project directory once per session to
-avoid passing it to every function:
+For interactive work, configure the project directory once per session to avoid passing it to every function:
 
-```r
+``` r
 options(rENM.project_dir = "/path/to/your/rENM/project")
 
 stage_occurrences("CASP")
@@ -82,7 +81,7 @@ stage_all_variables("CASP")
 
 ## Modeling pipeline
 
-```
+```         
 stage_occurrences()
 stage_all_variables()
         ↓
@@ -97,28 +96,22 @@ create_ensemble_model()   ← single time bin
 create_timeseries()       ← all bins in parallel
 ```
 
-Variable screening reads from the run-level `_occs/` and `_vars/` directories.
-Staging functions copy files into `TimeSeries/<year>/occs/` and
-`TimeSeries/<year>/vars/`. Model outputs are written to
-`TimeSeries/<year>/model/`.
+Variable screening reads from the run-level `_occs/` and `_vars/` directories. Staging functions copy files into `TimeSeries/<year>/occs/` and `TimeSeries/<year>/vars/`. Model outputs are written to `TimeSeries/<year>/model/`.
 
-## Role in the rENM framework
+## Role in the rENM Framework
 
 `rENM.model` is the third stage in the pipeline:
 
-```
+```         
 rENM.core → rENM.data → rENM.model → rENM.analysis → rENM.ai → rENM.reports
 ```
 
-It consumes the run directory structure and preprocessed data produced by
-`rENM.data` and generates the modeled suitability surfaces and range maps
-consumed by `rENM.analysis`.
+It consumes the run directory structure and preprocessed data produced by `rENM.data` and generates the modeled suitability surfaces and range maps consumed by `rENM.analysis`.
 
 ## License
 
 See `LICENSE` for details.
 
----
+------------------------------------------------------------------------
 
-**rENM Framework** — A modular system for reconstructing and analyzing
-long-term ecological niche dynamics.
+**rENM Framework** — A modular system for reconstructing and analyzing long-term ecological niche dynamics.

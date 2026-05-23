@@ -17,7 +17,7 @@ stage_all_variables(
 \code{seq(1980, 2020, by = 5)}.}
 
 \item{project_dir}{Character. Path to the rENM project root. If NULL,
-resolved via \code{\link{rENM_project_dir}}.}
+resolved via \code{\link[rENM.core]{rENM_project_dir}}.}
 }
 \value{
 Invisible data frame with columns \code{year}, \code{src_dir},
@@ -43,5 +43,5 @@ A processing summary is appended to the run log.
 }
 }
 \seealso{
-\code{\link{rENM_project_dir}}, \code{\link{stage_occurrences}}
+\code{\link{stage_occurrences}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

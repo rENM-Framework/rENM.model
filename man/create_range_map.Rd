@@ -81,5 +81,5 @@ Sidecar files (\code{.prj}, \code{.aux.xml}) are removed after writing.
 
 }
 \seealso{
-\code{\link{plot_suitability}}, \code{\link{rENM_project_dir}}
+\code{\link{plot_suitability}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

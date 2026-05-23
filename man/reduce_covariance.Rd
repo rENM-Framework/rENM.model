@@ -78,5 +78,5 @@ Outputs per year:
 
 }
 \seealso{
-\code{\link{rENM_project_dir}}, \code{\link{stage_screened_variables}}
+\code{\link{stage_screened_variables}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

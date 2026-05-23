@@ -19,7 +19,7 @@
 #'
 #' @param alpha_code Character. Four-letter banding code (e.g., \code{"CASP"}).
 #' @param project_dir Character. Path to the rENM project root. If NULL,
-#'   resolved via \code{\link{rENM_project_dir}}.
+#'   resolved via \code{\link[rENM.core]{rENM_project_dir}}.
 #'
 #' @return Invisible named list keyed by year. Each element contains:
 #'   \code{ok} (logical), \code{year} (integer), \code{elapsed} (seconds),
@@ -29,7 +29,7 @@
 #'   Side effects are parallel job execution, file outputs per year, and a
 #'   summary log entry.
 #'
-#' @seealso \code{\link{create_ensemble_model}}, \code{\link{rENM_project_dir}}
+#' @seealso \code{\link{create_ensemble_model}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @importFrom parallel detectCores makeCluster stopCluster clusterSetRNGStream parLapplyLB
 #'
 #' @examples

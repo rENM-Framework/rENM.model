@@ -42,7 +42,7 @@
 #'   (combined) or additionally \code{metric} (uncombined), sorted by
 #'   descending importance.
 #'
-#' @seealso \code{\link{create_ensemble_model}}, \code{\link{rENM_project_dir}}
+#' @seealso \code{\link{create_ensemble_model}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @importFrom stats aggregate
 #' @importFrom utils head
 #'

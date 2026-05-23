@@ -100,5 +100,5 @@ res <- screen_by_convergence1("CASP", 1990, seed = 42)
 
 }
 \seealso{
-\code{\link{screen_by_convergence2}}, \code{\link{rENM_project_dir}}
+\code{\link{screen_by_convergence2}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

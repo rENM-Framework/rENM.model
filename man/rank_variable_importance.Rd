@@ -69,5 +69,5 @@ supplied) or to \code{log_path}.
 
 }
 \seealso{
-\code{\link{create_ensemble_model}}, \code{\link{rENM_project_dir}}
+\code{\link{create_ensemble_model}}, \code{\link[rENM.core]{rENM_project_dir}}
 }

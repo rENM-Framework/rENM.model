@@ -15,7 +15,7 @@
 #' @param year Integer. Vector of 5-year bins in \{1980, 1985, ..., 2020\}.
 #'   Default: \code{seq(1980, 2020, 5)}.
 #' @param project_dir Character. Path to the rENM project root. If NULL,
-#'   resolved via \code{\link{rENM_project_dir}}.
+#'   resolved via \code{\link[rENM.core]{rENM_project_dir}}.
 #'
 #' @return Invisible list with elements:
 #'   \code{alpha_code}, \code{years}, \code{copied_paths},
@@ -25,7 +25,7 @@
 #'   Primary side effects are file copies, directory creation, and a log
 #'   entry appended to \code{_log.txt}.
 #'
-#' @seealso \code{\link{rENM_project_dir}}, \code{\link{stage_all_variables}}
+#' @seealso \code{\link{stage_all_variables}}, \code{\link[rENM.core]{rENM_project_dir}}
 #' @examples
 #' \dontrun{
 #'   stage_occurrences("CASP")
