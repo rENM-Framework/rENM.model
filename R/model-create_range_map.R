@@ -42,7 +42,8 @@
 #' @importFrom terra rast vect crs same.crs project ext nlyr writeRaster as.data.frame
 #' @importFrom sf st_as_sf st_crs
 #' @importFrom ggplot2 ggplot geom_raster aes_string scale_fill_manual geom_sf labs
-#'   coord_sf scale_x_continuous scale_y_continuous theme_bw theme element_text ggsave
+#' @importFrom ggplot2 coord_sf scale_x_continuous scale_y_continuous theme_bw
+#' @importFrom ggplot2 theme element_text ggsave
 #'
 #' @examples
 #' \dontrun{
