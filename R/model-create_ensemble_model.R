@@ -295,7 +295,6 @@ create_ensemble_model <- function(
 
   ps_fun <- get("plot_suitability", mode = "function")
   p1     <- ps_fun(en, alpha_code, title = title1)
-  utils::capture.output(print(p1))
 
   ssp_fun     <- get("save_suitability_plot", mode = "function")
   save_prefix <- file.path(model_dir, sprintf("%s-%d-Prediction", alpha_code, year))
@@ -312,7 +311,6 @@ create_ensemble_model <- function(
 
   crm_fun <- get("create_range_map", mode = "function")
   p2      <- crm_fun(pa, alpha_code, year = year, title = title2)
-  utils::capture.output(print(p2))
 
   n_pres <- tryCatch(nrow(as.data.frame(sp_df)), error = function(e) NA_integer_)
   n_pred <- tryCatch(raster::nlayers(pr),        error = function(e) NA_integer_)
