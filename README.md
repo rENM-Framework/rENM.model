@@ -1,6 +1,6 @@
 # rENM.model
 
-![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-model-informational)
+![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-model-informational)[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20797840.svg)](https://doi.org/10.5281/zenodo.20797840)
 
 **Modeling and reconstruction engine for the rENM Framework**
 
@@ -13,7 +13,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 ## Key functions
 
 | Function | Description |
-|----|----|
+|------------------------------------|------------------------------------|
 | `stage_occurrences()` | Copy occurrence CSVs into TimeSeries bins |
 | `stage_all_variables()` | Copy predictor rasters into TimeSeries bins |
 | `screen_by_convergence1()` | Convergence-based variable screening via dismo MaxEnt (requires Java) |
