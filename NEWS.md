@@ -1,11 +1,27 @@
-# rENM.model NEWS
+# rENM.model 0.1.0
 
-## rENM.model 0.1.1.9000 (development)
-
-### Bug fixes
-
-- Fixed `"invalid 'scipen'"` error that caused all `create_timeseries()` workers to fail under R 4.6.0. R 4.6.0 tightened validation of the `scipen` option: `options(scipen = <list>)` now throws an error instead of silently coercing (see R 4.6.0 NEWS). The bug is in the `writeValues` S4 method for `signature("RasterLayer", "vector")` in the `raster` package: `opsci = options("scipen")` saves scipen as a named list (`list(scipen=0)`), not a scalar, so the subsequent `options(scipen = opsci)` restore call fails in R 4.6.0. This code path is hit for every raster write in `.asc` format, which `sdm::sdm()` triggers internally when writing model predictions during training. A compatibility patch is applied inline at the top of `create_ensemble_model()`, immediately after `raster` is loaded via `must_have_pkg()`, using `methods::setMethod()` to replace the broken method. Placing it there ensures it runs in both the main R process and the PSOCK workers spawned by `create_timeseries()` — workers load `raster` directly via `library()` and would not benefit from a package `.onLoad` hook. The fix replaces `opsci = options("scipen")` with `opsci = getOption("scipen")` so the saved value is a scalar and the restore call is valid. The patch is guarded and will silently do nothing once `raster` is fixed upstream. (#R46-scipen)
-
-- `Hmisc` removed from `Imports`. It is an internal dependency of `sdm` and is never called directly by `rENM.model`; declaring it caused `"Namespace in Imports field not imported from: 'Hmisc'"` in `R CMD check`.
-
-- `randomForest`, `gbm`, and `earth` moved from `Imports` to `Suggests`. These are `sdm` method-driver packages loaded at runtime via `must_have_pkg()`. Because they are loaded with `library()` rather than referenced via `::` or `@importFrom`, declaring them in `Imports` caused `"Namespaces in Imports field not imported from"` in `R CMD check`. `must_have_pkg()` already checks for their presence and stops with a clear message if any are missing.
+* Initial release.
+* Added `stage_occurrences()` to copy occurrence CSVs into TimeSeries bins.
+* Added `stage_all_variables()` to copy predictor rasters into TimeSeries bins.
+* Added `screen_by_convergence1()` for convergence-based variable screening via
+  dismo MaxEnt (requires Java).
+* Added `screen_by_convergence2()` for convergence-based variable screening via
+  native R maxnet (no Java dependency).
+* Added `reduce_covariance()` to remove collinear predictors via adaptive VIF
+  screening.
+* Added `stage_screened_variables()` to copy ranked predictors into TimeSeries
+  bins.
+* Added `create_ensemble_model()` to fit an ensemble ENM for a single species
+  and time bin.
+* Added `create_timeseries()` to run `create_ensemble_model()` across all time
+  bins in parallel.
+* Added `create_range_map()` to produce a binary presence-absence range map.
+* Added `plot_suitability()` to plot a continuous climatic suitability raster.
+* Added `save_suitability_plot()` to save a suitability ggplot to disk.
+* Added `rank_variable_importance()` to parse and rank variable importance from
+  an SDM report.
+* Applied compatibility patch in `create_ensemble_model()` to fix an
+  `"invalid 'scipen'"` error triggered by R 4.6.0's tightened option validation.
+  The bug originates in `raster::writeValues()`, which saves `scipen` as a named
+  list instead of a scalar; the patch replaces the broken `options("scipen")`
+  save with `getOption("scipen")` so the restore call is valid under R 4.6.0.
