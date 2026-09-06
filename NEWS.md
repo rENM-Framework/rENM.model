@@ -1,4 +1,4 @@
-# rENM.model 0.1.0
+# rENM.model 0.2.0.9000
 
 * Initial release.
 * Added `stage_occurrences()` to copy occurrence CSVs into TimeSeries bins.
