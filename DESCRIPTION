@@ -20,6 +20,7 @@ Imports:
     rENM.core,
     dismo,
     doParallel,
+    doRNG,
     dplyr,
     foreach,
     ggplot2,

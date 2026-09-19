@@ -45,7 +45,10 @@
 #'   default 0.5.
 #' @param background_n Integer. Background points per model; default 2500.
 #' @param seed Integer or NULL. RNG seed; NULL draws a random seed that is
-#'   returned in the result.
+#'   returned in the result. Supplying a seed makes variable selection
+#'   reproducible: the parallel permutation-importance fits draw from streams
+#'   tied to the iteration rather than to the worker, so the result does not
+#'   depend on task scheduling or on \code{ncores}.
 #' @param ncores Integer. CPU cores for parallel fits; default
 #'   \code{max(1, parallel::detectCores() - 1)}.
 #' @param fast Logical. Enable fast triage mode; default FALSE.
@@ -79,6 +82,7 @@
 #' @importFrom raster stack subset extract nlayers extent sampleRandom
 #' @importFrom foreach foreach %dopar%
 #' @importFrom doParallel registerDoParallel
+#' @importFrom doRNG registerDoRNG
 #' @importFrom parallel makeCluster stopCluster detectCores clusterSetRNGStream
 #' @importFrom dplyr %>% group_by summarise mutate arrange select if_else
 #' @importFrom stats median IQR sd quantile predict
@@ -230,10 +234,18 @@ screen_by_convergence2 <- function(alpha_code,
     }
   }
 
-  ## --- parallel (deterministic RNG for workers) ----------------------------
+  ## --- parallel (deterministic RNG per iteration) --------------------------
+  # clusterSetRNGStream() makes each worker's stream reproducible, but %dopar%
+  # does not guarantee which worker runs which task, so a given pairing can
+  # draw from a different stream between runs. Permutation importance is
+  # sampled inside the workers, and that alone was enough to change which
+  # variables were selected. registerDoRNG() ties the stream to the iteration
+  # rather than the worker, so results no longer depend on task scheduling or
+  # on how many cores the host reports.
   cl <- makeCluster(ncores)
   registerDoParallel(cl)
   clusterSetRNGStream(cl, seed)
+  registerDoRNG(seed)
   on.exit({ try(stopCluster(cl), silent = TRUE) }, add = TRUE)
 
   ## --- helpers --------------------------------------------------------------
