@@ -74,6 +74,14 @@
 #' @param verbose Logical. Emit timestamped console progress.
 #' Default \code{TRUE}.
 #'
+#' @param seed Integer scalar, or \code{NULL}. When supplied, the random
+#' number generator is seeded with \code{seed + year} before background
+#' points are drawn and the models are fitted, making the year's model
+#' reproducible. Seeding here rather than in the caller means the result
+#' does not depend on which parallel worker runs the year, since
+#' \code{create_timeseries()} dispatches years with load balancing.
+#' \code{NULL} (default) leaves the generator untouched.
+#'
 #' @return Invisibly returns a List with structured elements:
 #' \itemize{
 #'   \item \code{data}: sdmData object containing training data
@@ -123,7 +131,8 @@ create_ensemble_model <- function(
     ensemble_method = "unweighted",
     io = c("raster", "terra"),
     overwrite = TRUE,
-    verbose = TRUE
+    verbose = TRUE,
+    seed = NULL
 ) {
   io <- match.arg(io)
 
@@ -232,6 +241,16 @@ create_ensemble_model <- function(
   }
   say("Stacking predictors (", length(asc_files), ") from ", vars_dir)
   pr <- raster::stack(asc_files)
+
+  if (!is.null(seed)) {
+    if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
+      stop("`seed` must be a finite numeric scalar or NULL.", call. = FALSE)
+    }
+    # Offset by year so each bin is reproducible but distinct; seeding
+    # identically across bins would draw the same background points for
+    # every year, which changes the statistics rather than just pinning them.
+    set.seed(seed + year)
+  }
 
   say("Preparing sdmData() with bg=", bg, ", test.p=", tp)
   d <- sdm::sdmData(

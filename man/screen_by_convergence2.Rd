@@ -35,7 +35,10 @@ default 0.5.}
 \item{background_n}{Integer. Background points per model; default 2500.}
 
 \item{seed}{Integer or NULL. RNG seed; NULL draws a random seed that is
-returned in the result.}
+returned in the result. Supplying a seed makes variable selection
+reproducible: the parallel permutation-importance fits draw from streams
+tied to the iteration rather than to the worker, so the result does not
+depend on task scheduling or on \code{ncores}.}
 
 \item{ncores}{Integer. CPU cores for parallel fits; default
 \code{max(1, parallel::detectCores() - 1)}.}

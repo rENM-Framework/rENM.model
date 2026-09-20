@@ -1,5 +1,17 @@
 # rENM.model 0.2.0.9000
 
+* Fixed `create_timeseries()` seeding its worker RNG streams from the wall
+  clock (`as.integer(Sys.time())`), which made every run different by
+  construction and defeated any seed set upstream. `create_timeseries()` and
+  `create_ensemble_model()` both gain a `seed` argument; when supplied, the
+  streams are seeded from it and each year is seeded with `seed + year`
+  immediately before `sdmData()` and `sdm()`. The per-year seeding is what
+  provides the guarantee, because years are dispatched with
+  `parLapplyLB()` and a year therefore cannot rely on landing on any
+  particular worker. The year offset keeps each bin distinct; seeding every
+  bin identically would draw the same background points throughout the time
+  series, altering the statistics rather than merely pinning them. Passing
+  `seed = NULL` (the default) preserves the previous clock-seeded behavior.
 * Fixed `screen_by_convergence2()` selecting different variables on repeated
   runs given the same seed. `clusterSetRNGStream()` makes each worker's RNG
   stream reproducible, but `%dopar%` does not guarantee which worker runs

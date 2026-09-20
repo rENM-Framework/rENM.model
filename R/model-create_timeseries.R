@@ -20,6 +20,13 @@
 #' @param alpha_code Character. Four-letter banding code (e.g., \code{"CASP"}).
 #' @param project_dir Character. Path to the rENM project root. If NULL,
 #'   resolved via \code{\link[rENM.core]{rENM_project_dir}}.
+#' @param seed Integer scalar, or \code{NULL}. Passed to
+#'   \code{\link{create_ensemble_model}}, which seeds each year with
+#'   \code{seed + year}, and used to seed the worker RNG streams. Because
+#'   years are dispatched with load balancing, the per-year seeding inside
+#'   the worker is what makes the result reproducible; the stream seed alone
+#'   would not be enough. \code{NULL} (default) seeds the streams from the
+#'   clock, leaving runs stochastic as before.
 #'
 #' @return Invisible named list keyed by year. Each element contains:
 #'   \code{ok} (logical), \code{year} (integer), \code{elapsed} (seconds),
@@ -39,7 +46,7 @@
 #' }
 #'
 #' @export
-create_timeseries <- function(alpha_code, project_dir = NULL) {
+create_timeseries <- function(alpha_code, project_dir = NULL, seed = NULL) {
 
   if (is.null(project_dir)) {
     project_dir <- rENM_project_dir()
@@ -97,7 +104,15 @@ create_timeseries <- function(alpha_code, project_dir = NULL) {
     try(parallel::stopCluster(cl), silent = TRUE)
   }, add = TRUE)
 
-  parallel::clusterSetRNGStream(cl, as.integer(Sys.time()))
+  # A clock-derived stream seed made every run different by construction.
+  # The streams are seeded from `seed` when one is given, but the guarantee
+  # comes from create_ensemble_model() seeding per year: parLapplyLB()
+  # assigns years to workers by timing, so a year cannot rely on landing on
+  # any particular worker's stream.
+  parallel::clusterSetRNGStream(
+    cl,
+    if (is.null(seed)) as.integer(Sys.time()) else as.integer(seed)
+  )
 
   say("Launched ", n_cores, " workers. Scheduling ", length(years), " runs ...")
 
@@ -110,7 +125,7 @@ create_timeseries <- function(alpha_code, project_dir = NULL) {
 
     out <- tryCatch(
       {
-        res <- cem_fn(alpha_code, yr)
+        res <- cem_fn(alpha_code, yr, seed = seed)
         list(
           ok      = TRUE,
           year    = yr,
