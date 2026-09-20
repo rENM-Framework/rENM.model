@@ -15,7 +15,8 @@ create_ensemble_model(
   ensemble_method = "unweighted",
   io = c("raster", "terra"),
   overwrite = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  seed = NULL
 )
 }
 \arguments{
@@ -57,6 +58,14 @@ Default \code{TRUE}.}
 
 \item{verbose}{Logical. Emit timestamped console progress.
 Default \code{TRUE}.}
+
+\item{seed}{Integer scalar, or \code{NULL}. When supplied, the random
+number generator is seeded with \code{seed + year} before background
+points are drawn and the models are fitted, making the year's model
+reproducible. Seeding here rather than in the caller means the result
+does not depend on which parallel worker runs the year, since
+\code{create_timeseries()} dispatches years with load balancing.
+\code{NULL} (default) leaves the generator untouched.}
 }
 \value{
 Invisibly returns a List with structured elements:

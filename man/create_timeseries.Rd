@@ -4,13 +4,21 @@
 \alias{create_timeseries}
 \title{Build a full rENM time series for a species}
 \usage{
-create_timeseries(alpha_code, project_dir = NULL)
+create_timeseries(alpha_code, project_dir = NULL, seed = NULL)
 }
 \arguments{
 \item{alpha_code}{Character. Four-letter banding code (e.g., \code{"CASP"}).}
 
 \item{project_dir}{Character. Path to the rENM project root. If NULL,
 resolved via \code{\link[rENM.core]{rENM_project_dir}}.}
+
+\item{seed}{Integer scalar, or \code{NULL}. Passed to
+\code{\link{create_ensemble_model}}, which seeds each year with
+\code{seed + year}, and used to seed the worker RNG streams. Because
+years are dispatched with load balancing, the per-year seeding inside
+the worker is what makes the result reproducible; the stream seed alone
+would not be enough. \code{NULL} (default) seeds the streams from the
+clock, leaving runs stochastic as before.}
 }
 \value{
 Invisible named list keyed by year. Each element contains:
