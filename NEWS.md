@@ -26,6 +26,9 @@
   is not reached by the pipeline and is unchanged; it would also need its
   MaxEnt `randomseed=true` argument addressed, since that randomization lives
   in Java and is outside R's control.
+
+# rENM.model 0.1.0
+
 * Initial release.
 * Added `stage_occurrences()` to copy occurrence CSVs into TimeSeries bins.
 * Added `stage_all_variables()` to copy predictor rasters into TimeSeries bins.
