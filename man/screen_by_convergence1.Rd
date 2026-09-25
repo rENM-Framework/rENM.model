@@ -63,9 +63,7 @@ Side effects: two CSV files and a log block are written to disk.
 \description{
 Repeatedly fits bivariate \code{MaxEnt} models (via \pkg{dismo}), aggregates
 permutation importance (PI) scores, and stops when both the mean PI and
-membership of the adaptive top-k variable set stabilize. Use this variant
-when Java-based MaxEnt is available; see \code{\link{screen_by_convergence2}}
-for a Java-free alternative.
+membership of the adaptive top-k variable set stabilize.
 }
 \details{
 Reads occurrences from \code{runs/<alpha_code>/_occs/of-<year>.csv} and
@@ -89,6 +87,27 @@ deterministic per-worker RNG streams.
 If \code{year = NULL}, all 5-year intervals 1980--2020 are processed in
 sequence.
 }
+\section{Not the standard method, and not reproducible}{
+
+\code{\link{screen_by_convergence2}} is the method the pipeline uses and the
+only one the User Manual documents. This function is retained for
+methodological comparison against the Java MaxEnt implementation the
+screening procedure was originally developed with.
+
+It cannot deliver the reproducibility the rest of the pipeline provides.
+The \code{seed} argument fixes what it can, but \pkg{dismo}'s MaxEnt is
+invoked with \code{randomseed=true} and that randomization happens inside
+Java, outside R's control. The parallel loop also never received the
+\pkg{doRNG} treatment that made \code{screen_by_convergence2()} independent
+of worker scheduling. A seeded run of this function may therefore select
+different variables each time, with nothing to signal it.
+
+It additionally requires a working Java installation, which the framework
+documentation does not cover.
+
+This function is expected to be deprecated in a future release.
+}
+
 \examples{
 \dontrun{
 ## Quick triage across all years
