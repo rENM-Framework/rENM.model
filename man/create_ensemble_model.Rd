@@ -98,6 +98,7 @@ Inputs/paths must follow the rENM run structure:
 \preformatted{
 <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/occs/of-<YEAR>.csv
 <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/vars/*.asc
+<rENM_project_dir()>/runs/<ALPHA>/_vars/<YEAR>/evland.asc  (land mask)
 <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/model/   (outputs written here)
 }
 
@@ -108,6 +109,14 @@ The occurrence CSV must include \code{longitude}, \code{latitude}.
 Models are trained via \code{sdm::sdm()} with replicated subsampling
 (\code{reps}) and a test partition (\code{tp}, percent). Background
 points (\code{bg}) are drawn using \code{method = "gRandom"}.
+
+Predictors are first masked to land, using the NA footprint of the
+MERRA-2 land-only variable \code{evland} read from
+\code{runs/<alpha_code>/_vars/<year>/evland.asc}. Sixteen MERRA-2
+land-surface variables share that footprint in every year, so the
+mask is the same for every bin whichever variables were screened in.
+Background points, fitting, the prediction and the range map are all
+confined to land. Occurrences falling in open-water cells are dropped.
 
 The default modeling ensemble uses \code{"maxnet"} (a native R
 implementation of maximum entropy modeling) instead of

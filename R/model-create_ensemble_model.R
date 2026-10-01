@@ -15,6 +15,7 @@
 #' \preformatted{
 #' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/occs/of-<YEAR>.csv
 #' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/vars/*.asc
+#' <rENM_project_dir()>/runs/<ALPHA>/_vars/<YEAR>/evland.asc  (land mask)
 #' <rENM_project_dir()>/runs/<ALPHA>/TimeSeries/<YEAR>/model/   (outputs written here)
 #' }
 #'
@@ -25,6 +26,14 @@
 #' Models are trained via \code{sdm::sdm()} with replicated subsampling
 #' (\code{reps}) and a test partition (\code{tp}, percent). Background
 #' points (\code{bg}) are drawn using \code{method = "gRandom"}.
+#'
+#' Predictors are first masked to land, using the NA footprint of the
+#' MERRA-2 land-only variable \code{evland} read from
+#' \code{runs/<alpha_code>/_vars/<year>/evland.asc}. Sixteen MERRA-2
+#' land-surface variables share that footprint in every year, so the
+#' mask is the same for every bin whichever variables were screened in.
+#' Background points, fitting, the prediction and the range map are all
+#' confined to land. Occurrences falling in open-water cells are dropped.
 #'
 #' The default modeling ensemble uses \code{"maxnet"} (a native R
 #' implementation of maximum entropy modeling) instead of
@@ -242,6 +251,29 @@ create_ensemble_model <- function(
   say("Stacking predictors (", length(asc_files), ") from ", vars_dir)
   pr <- raster::stack(asc_files)
 
+  # ---- Land mask ----
+  # Sixteen MERRA-2 land-surface variables are NA over open water, with the
+  # same footprint in every year; MERRAclim-2 variables are defined
+  # everywhere. Unmasked, a bin whose screened set includes a land-only
+  # variable is fitted and predicted on land alone, while a bin without one
+  # draws background points from open water and predicts onto it. The
+  # modeled domain then changed from bin to bin with variable selection, and
+  # trends over water were fitted to whichever bins happened to cover it.
+  # Masking every bin to one land footprint fixes the domain. It also matches
+  # screen_by_convergence2(), which samples background only where every
+  # candidate has a value, and so already excludes water.
+  land_fn <- file.path(base_dir, "_vars", year, "evland.asc")
+  if (!file.exists(land_fn)) {
+    stop(sprintf("Land mask source not found: %s", land_fn))
+  }
+  land <- raster::raster(land_fn)
+  if (!raster::compareRaster(land, pr, stopiffalse = FALSE)) {
+    stop(sprintf("Land mask grid does not match predictors: %s", land_fn))
+  }
+  pr <- raster::mask(pr, land)
+  n_land <- sum(!is.na(raster::values(land)))
+  say("Masked predictors to land (", n_land, " of ", raster::ncell(land), " cells)")
+
   if (!is.null(seed)) {
     if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
       stop("`seed` must be a finite numeric scalar or NULL.", call. = FALSE)
@@ -355,6 +387,8 @@ create_ensemble_model <- function(
     kv("Methods",        paste(methods, collapse = ", ")),
     kv("Replicates",     reps),
     kv("BG points",      bg),
+    kv("Land cells",     sprintf("%s of %s", format(n_land, big.mark = ","),
+                                 format(raster::ncell(land), big.mark = ","))),
     kv("Test percent",   tp),
     kv("Threshold op",   sprintf("%d (max(se+sp))", op)),
     "Outputs:",

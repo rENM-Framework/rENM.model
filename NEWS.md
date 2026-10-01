@@ -1,5 +1,25 @@
 # rENM.model 0.2.0.9000
 
+* `create_ensemble_model()` now masks every bin's predictors to land
+  before drawing background points. Sixteen MERRA-2 land-surface variables
+  are NA over open water, with one footprint in every year; the MERRAclim-2
+  variables are defined everywhere. A bin whose screened set included a
+  land-only variable was therefore fitted and predicted on land, while a bin
+  without one drew background from open water and predicted onto it. The
+  modeled domain changed from bin to bin with variable selection. A trend
+  needs three bins with data, so open water entered a trend surface only
+  when enough bins lacked a land-only variable: in four of five seeded CASP
+  runs it did, adding 494,673 km2 of water fitted to three or four of nine
+  bins, and `valid_area_km2` moved between 5,069,328 and 5,564,001 km2 with
+  the seed. Where fewer bins covered water, the trend was clean but those
+  bins' centroids, range maps and velocities still included it: four of the
+  twelve pilot species (BETH, CASP, GRRO, PIJA) predicted onto water in one
+  or two bins. The mask is the NA footprint of `evland`, read from the
+  run's staged variables. `screen_by_convergence2()` needs no change: it
+  samples background only where every candidate has a value, which already
+  excludes water. On CASP 1980 the masked prediction correlates 0.98 with
+  the unmasked one over land.
+
 * Fixed `create_timeseries()` seeding its worker RNG streams from the wall
   clock (`as.integer(Sys.time())`), which made every run different by
   construction and defeated any seed set upstream. `create_timeseries()` and
