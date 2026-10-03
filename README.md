@@ -20,7 +20,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 | `screen_by_convergence2()` | Convergence-based variable screening via native R maxnet (no Java dependency) |
 | `reduce_covariance()` | Remove collinear predictors via adaptive VIF screening |
 | `stage_screened_variables()` | Copy ranked predictors into TimeSeries bins |
-| `create_ensemble_model()` | Fit an ensemble ENM for a single species and time bin |
+| `create_ensemble_model()` | Fit an ensemble ENM on land cells for a single species and time bin |
 | `create_timeseries()` | Run `create_ensemble_model()` across all time bins in parallel |
 | `create_range_map()` | Produce a binary presence-absence range map |
 | `plot_suitability()` | Plot a continuous climatic suitability raster |
