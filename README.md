@@ -8,7 +8,7 @@
 
 `rENM.model` implements the core ecological niche modeling and historical reconstruction workflows within the rENM Framework. It transforms standardized occurrence and environmental data into time-resolved estimates of climatic suitability.
 
-This package depends on `rENM.core` for project-directory resolution and species metadata access. All functions accept an optional `project_dir` argument; see `?rENM_project_dir` for configuration options.
+This package depends on `rENM.core` for project-directory resolution and species metadata access. Functions find the project directory through `rENM.core::rENM_project_dir()`; see `?rENM_project_dir` for configuration options.
 
 ## Key functions
 
@@ -44,49 +44,36 @@ Set up a project directory and preprocess occurrence and predictor data first (s
 ``` r
 library(rENM.model)
 
-proj <- "/path/to/your/rENM/project"
-
-# 1. Stage occurrence and predictor data into TimeSeries bins
-stage_occurrences("CASP", project_dir = proj)
-stage_all_variables("CASP", project_dir = proj)
-
-# 2. Screen variables (use convergence2 for a Java-free workflow)
-screen_by_convergence2("CASP", project_dir = proj)
-
-# 3. Remove collinear predictors and finalize variable sets
-reduce_covariance("CASP", project_dir = proj)
-stage_screened_variables("CASP", project_dir = proj)
-
-# 4. Fit models and generate the full time series
-create_ensemble_model("CASP", year = 2000, project_dir = proj)
-create_timeseries("CASP", project_dir = proj)
-```
-
-For interactive work, configure the project directory once per session to avoid passing it to every function:
-
-``` r
+# set once per session, or set RENM_PROJECT_DIR in ~/.Renviron
 options(rENM.project_dir = "/path/to/your/rENM/project")
 
+# 1. Stage occurrence records into TimeSeries bins
 stage_occurrences("CASP")
-stage_all_variables("CASP")
-# ...
+
+# 2. Screen variables and stage the selected set
+#    (or stage_all_variables("CASP") to stage every variable unscreened)
+screen_by_convergence2("CASP", seed = 42)
+stage_screened_variables("CASP")
+
+# 3. Optionally remove strongly collinear predictors
+# reduce_covariance("CASP")
+
+# 4. Fit the ensemble models for all nine bins
+create_timeseries("CASP", seed = 42)
 ```
 
 ## Modeling pipeline
 
 ```         
 stage_occurrences()
-stage_all_variables()
         ↓
-screen_by_convergence1()  or  screen_by_convergence2()  (Java-free)
+screen_by_convergence2()  or  screen_by_convergence1()  (requires Java)
         ↓
-reduce_covariance()
+stage_screened_variables()      or  stage_all_variables()  (no screening)
         ↓
-stage_screened_variables()
+reduce_covariance()             (optional)
         ↓
-create_ensemble_model()   ← single time bin
-        ↓
-create_timeseries()       ← all bins in parallel
+create_timeseries()             ← runs create_ensemble_model() for every bin
 ```
 
 Variable screening reads from the run-level `_occs/` and `_vars/` directories. Staging functions copy files into `TimeSeries/<year>/occs/` and `TimeSeries/<year>/vars/`. Model outputs are written to `TimeSeries/<year>/model/`.
