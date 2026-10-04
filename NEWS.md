@@ -1,5 +1,18 @@
 # rENM.model 0.2.0.9000
 
+* `create_ensemble_model()` now draws 10 background points per usable
+  presence in each bin (new argument `bg_ratio`, default `10`) instead of a
+  fixed 2,500. Predicted suitability rises with the presence-to-background
+  ratio, so with a fixed count a bin with fewer records predicted lower
+  suitability, and the growth of eBird records between 1980 and 2020
+  appeared as a suitability trend. 2,500 matched the intended 1:10 only for
+  a bin at the 250-record cap. In seed-42 runs on Gray Vireo, whose bins
+  grow from 76 to 250 records, mean suitability rose from 0.060 to 0.104
+  with the fixed count and stayed level at 1:10; the share of the extent
+  with a positive trend fell from 86 to 33 percent. Capping every bin at the
+  smallest bin's count gave 32 percent. Species whose bins all reach the
+  cap are unaffected. `create_timeseries()` passes `bg_ratio` through, and
+  `bg_ratio = NULL` restores the fixed `bg`.
 * `create_ensemble_model()` now masks every bin's predictors to land
   before drawing background points. Sixteen MERRA-2 land-surface variables
   are NA over open water, with one footprint in every year; the MERRAclim-2

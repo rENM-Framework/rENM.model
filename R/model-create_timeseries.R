@@ -27,6 +27,10 @@
 #'   the worker is what makes the result reproducible; the stream seed alone
 #'   would not be enough. \code{NULL} (default) seeds the streams from the
 #'   clock, leaving runs stochastic as before.
+#' @param bg_ratio Numeric, or \code{NULL}. Passed to
+#'   \code{\link{create_ensemble_model}}: background points per usable
+#'   presence in each bin. Default \code{10}. \code{NULL} uses that
+#'   function's fixed background count instead.
 #'
 #' @return Invisible named list keyed by year. Each element contains:
 #'   \code{ok} (logical), \code{year} (integer), \code{elapsed} (seconds),
@@ -46,7 +50,8 @@
 #' }
 #'
 #' @export
-create_timeseries <- function(alpha_code, project_dir = NULL, seed = NULL) {
+create_timeseries <- function(alpha_code, project_dir = NULL, seed = NULL,
+                              bg_ratio = 10) {
 
   if (is.null(project_dir)) {
     project_dir <- rENM_project_dir()
@@ -125,7 +130,7 @@ create_timeseries <- function(alpha_code, project_dir = NULL, seed = NULL) {
 
     out <- tryCatch(
       {
-        res <- cem_fn(alpha_code, yr, seed = seed)
+        res <- cem_fn(alpha_code, yr, seed = seed, bg_ratio = bg_ratio)
         list(
           ok      = TRUE,
           year    = yr,

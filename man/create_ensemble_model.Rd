@@ -10,6 +10,7 @@ create_ensemble_model(
   methods = c("maxnet", "rf", "brt", "glm", "mars"),
   reps = 3,
   bg = 2500,
+  bg_ratio = 10,
   tp = 40,
   op = 2,
   ensemble_method = "unweighted",
@@ -33,8 +34,23 @@ divisible by 5.}
 \item{reps}{Integer. Number of replicated subsampling runs.
 Default \code{3}.}
 
-\item{bg}{Integer. Number of background points. Default
-\code{2500}.}
+\item{bg}{Integer. Fixed number of background points, used only when
+\code{bg_ratio = NULL}. Default \code{2500}.}
+
+\item{bg_ratio}{Numeric, or \code{NULL}. Background points per usable
+presence. Default \code{10}. Each bin draws \code{round(bg_ratio * n)}
+background points, where \code{n} counts the presences on cells with
+predictor values, so the presence-to-background ratio is 1:10 in every
+bin.
+
+Predicted suitability rises with the presence-to-background ratio. With
+a fixed background count, a bin with fewer records therefore predicts
+lower suitability, and the growth of eBird records between 1980 and 2020
+appears as a suitability trend. In a seed-42 test on Gray Vireo, whose
+bins grow from 76 to 250 records, mean predicted suitability rose from
+0.060 to 0.104 with a fixed 2,500 and stayed at 0.104 at 1:10. A fixed
+2,500 matches 1:10 only for a bin of 250 records. \code{NULL} restores
+the fixed \code{bg}.}
 
 \item{tp}{Numeric. Test partition percent (0-100). Default
 \code{40}.}
